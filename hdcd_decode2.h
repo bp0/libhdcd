@@ -58,7 +58,8 @@ typedef struct {
     hdcd_log_callback log_func;
 } hdcd_log_t;
 
-void hdcd_log_init(hdcd_log_t *log, hdcd_log_callback func, void *priv);
+int hdcd_log_init(hdcd_log_t *log);
+int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv);
 void hdcd_log(hdcd_log_t *log, const char* fmt, ...);
 void hdcd_log_enable(hdcd_log_t *log);
 void hdcd_log_disable(hdcd_log_t *log);
@@ -79,7 +80,7 @@ typedef enum {
 #define HDCD_ANA_CDT_DESC "samples where the code detect timer is active"
 #define HDCD_ANA_TGM_DESC "samples where the target gain does not match between channels"
 
-static const char* hdcd_str_ana_mode(hdcd_ana_mode_t v);
+const char* hdcd_str_ana_mode(hdcd_ana_mode_t v);
 
 /********************* decoding ********************************/
 
@@ -189,8 +190,8 @@ void hdcd_detect_end(hdcd_detection_data_t *detect, int channels);
 /* combines _start() _onech()(x2) _end */
 void hdcd_detect_stereo(hdcd_state_stereo_t *state, hdcd_detection_data_t *detect);
 
-static const char* hdcd_detect_str_pe(hdcd_pe_t v);
-static const char* hdcd_detect_str_pformat(hdcd_pf_t v);
+const char* hdcd_detect_str_pe(hdcd_pe_t v);
+const char* hdcd_detect_str_pformat(hdcd_pf_t v);
 void hdcd_detect_str(hdcd_detection_data_t *detect, char *str, int maxlen); /* [256] should be enough */
 
 void hdcd_dump_state_to_log(hdcd_state_t *state, int channel);

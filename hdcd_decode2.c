@@ -30,7 +30,6 @@
  */
 
 #include "hdcd_decode2.h"
-
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -817,6 +816,11 @@ static const int32_t gaintab[] = {
 #define FFMAX(x, y) ((x) >= (y) ? (x) : (y))
 #endif
 
+/* prototypes of local functions, to avoid warnings */
+void hdcd_default_logger(void *ignored, const char* fmt, va_list args);
+void hdcd_detect_stereo_old(hdcd_state_stereo_t *state, hdcd_detection_data_t *detect);
+void hdcd_analyze_prepare(hdcd_state_t *state, int32_t *samples, int count, int stride);
+
 /** convert to float from 4-bit (3.1) fixed-point
  *  the always-negative value is stored positive, so make it negative */
 #define GAINTOFLOAT(g) (g) ? -(float)(g>>1) - ((g & 1) ? 0.5 : 0.0) : 0.0
@@ -832,17 +836,21 @@ void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
     vprintf(fmt, args);
 }
 
-void hdcd_log_init(hdcd_log_t *log, hdcd_log_callback func, void *priv) {
+int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv) {
+    if (!log) return -1;
     log->priv = priv;
     if (func)
         log->log_func = func;
     else
         log->log_func = (hdcd_log_callback)hdcd_default_logger;
     log->enable = 1;
+    return 0;
 }
-
-void hdcd_log_enable(hdcd_log_t *log) { log->enable = 1; }
-void hdcd_log_disable(hdcd_log_t *log) { log->enable = 0; }
+int hdcd_log_init(hdcd_log_t *log) {
+    return hdcd_log_init_ext(log, NULL, NULL);
+}
+void hdcd_log_enable(hdcd_log_t *log) { if (log) log->enable = 1; }
+void hdcd_log_disable(hdcd_log_t *log) { if (log) log->enable = 0; }
 
 void hdcd_log(hdcd_log_t *log, const char* fmt, ...) {
     if (!log)
@@ -1203,7 +1211,7 @@ static int hdcd_analyze(int32_t *samples, int count, int stride, int gain, int t
 {
     static const int maxg = 0xf << 7;
     int i;
-    int32_t *samples_end = samples + stride * count;
+    //int32_t *samples_end = samples + stride * count;
 
     for (i = 0; i < count; i++) {
         samples[i * stride] <<= 15;
@@ -1260,7 +1268,7 @@ static int hdcd_analyze(int32_t *samples, int count, int stride, int gain, int t
 static int hdcd_envelope(int32_t *samples, int count, int stride, int gain, int target_gain, int extend)
 {
     int i;
-    int32_t *samples_end = samples + stride * count;
+    //int32_t *samples_end = samples + stride * count;
 
     if (extend) {
         for (i = 0; i < count; i++) {
@@ -1350,7 +1358,8 @@ static hdcd_control_result_t hdcd_control_stereo(hdcd_state_stereo_t *state, int
 
 void hdcd_process(hdcd_state_t *state, int32_t *samples, int count, int stride)
 {
-    int32_t *samples_end = samples + count * stride;
+    //int32_t *samples_end = samples + count * stride;
+    int full_count = count;
     int gain = state->running_gain;
     int peak_extend, target_gain;
     int lead = 0;
@@ -1384,17 +1393,19 @@ void hdcd_process(hdcd_state_t *state, int32_t *samples, int count, int stride)
     }
 
     state->running_gain = gain;
-    state->sample_count += count;
+    state->sample_count += full_count;
 }
 
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int32_t *samples, int count)
 {
     const int stride = 2;
-    int32_t *samples_end = samples + count * stride;
+    //int32_t *samples_end = samples + count * stride;
+    int full_count = count;
     int gain[2] = {state->channel[0].running_gain, state->channel[1].running_gain};
     int peak_extend[2];
     int lead = 0;
     int ctlret;
+
 
     if (state->ana_mode) {
         hdcd_analyze_prepare(&state->channel[0], samples, count, stride);
@@ -1447,8 +1458,8 @@ void hdcd_process_stereo(hdcd_state_stereo_t *state, int32_t *samples, int count
     state->channel[0].running_gain = gain[0];
     state->channel[1].running_gain = gain[1];
 
-    state->channel[0].sample_count += count;
-    state->channel[1].sample_count += count;
+    state->channel[0].sample_count += full_count;
+    state->channel[1].sample_count += full_count;
 }
 
 void hdcd_detect_reset(hdcd_detection_data_t *detect) {
@@ -1474,8 +1485,8 @@ void hdcd_detect_onech(hdcd_state_t *state, hdcd_detection_data_t *detect) {
     hdcd_pe_t pe = HDCD_PE_NEVER;
     detect->uses_transient_filter |= !!(state->count_transient_filter);
     detect->total_packets += state->code_counterA + state->code_counterB;
-    if (state->code_counterA) detect->packet_type &= HDCD_PVER_A;
-    if (state->code_counterB) detect->packet_type &= HDCD_PVER_B;
+    if (state->code_counterA) detect->packet_type |= HDCD_PVER_A;
+    if (state->code_counterB) detect->packet_type |= HDCD_PVER_B;
     if (state->count_peak_extend) {
         /* if every valid packet has used PE, call it permanent */
         if (state->count_peak_extend == state->code_counterA + state->code_counterB)
@@ -1545,8 +1556,8 @@ void hdcd_detect_stereo_old(hdcd_state_stereo_t *state, hdcd_detection_data_t *d
             detect->hdcd_detected = HDCD_NO_EFFECT;
     }
     detect->packet_type = HDCD_PVER_NONE;
-    if (packetsA) detect->packet_type &= HDCD_PVER_A;
-    if (packetsB) detect->packet_type &= HDCD_PVER_B;
+    if (packetsA) detect->packet_type |= HDCD_PVER_A;
+    if (packetsB) detect->packet_type |= HDCD_PVER_B;
     detect->total_packets = packetsA + packetsB;
     detect->cdt_expirations = -1;
     for (i = 0; i < 2; i++)
@@ -1556,7 +1567,7 @@ void hdcd_detect_stereo_old(hdcd_state_stereo_t *state, hdcd_detection_data_t *d
         }
 }
 
-static const char* hdcd_detect_str_pe(hdcd_pe_t v) {
+const char* hdcd_detect_str_pe(hdcd_pe_t v) {
     static const char * const pe_str[] = {
         "never enabled",
         "enabled intermittently",
@@ -1566,7 +1577,7 @@ static const char* hdcd_detect_str_pe(hdcd_pe_t v) {
     return pe_str[v];
 }
 
-static const char* hdcd_detect_str_pformat(hdcd_pf_t v) {
+const char* hdcd_detect_str_pformat(hdcd_pf_t v) {
     static const char * const pf_str[] = {
         "?", "A", "B", "A+B"
     };
@@ -1574,7 +1585,7 @@ static const char* hdcd_detect_str_pformat(hdcd_pf_t v) {
     return pf_str[v];
 }
 
-static const char* hdcd_str_ana_mode(hdcd_ana_mode_t v) {
+const char* hdcd_str_ana_mode(hdcd_ana_mode_t v) {
     static const char * const ana_mode_str[] = {
         HDCD_ANA_OFF_DESC,
         HDCD_ANA_LLE_DESC,
@@ -1607,9 +1618,9 @@ void hdcd_dump_state_to_log(hdcd_state_t *state, int channel) {
     if (channel >= 0)
         snprintf(chantag, sizeof(chantag), "Channel %d: ", channel);
 
-    hdcd_log(state->log, "%s""counter A: %d, B: %d, C: %d\n",
+    hdcd_log(state->log, "%s""counter A: %d, B: %d, C: %d\n", chantag,
         state->code_counterA, state->code_counterB, state->code_counterC);
-    hdcd_log(state->log, "%s""pe: %d, tf: %d, almost_A: %d, checkfail_B: %d, unmatched_C: %d, cdt_expired: %d\n",
+    hdcd_log(state->log, "%s""pe: %d, tf: %d, almost_A: %d, checkfail_B: %d, unmatched_C: %d, cdt_expired: %d\n", chantag,
         state->count_peak_extend,
         state->count_transient_filter,
         state->code_counterA_almost,
@@ -1617,6 +1628,6 @@ void hdcd_dump_state_to_log(hdcd_state_t *state, int channel) {
         state->code_counterC_unmatched,
         state->count_sustain_expired);
     for (j = 0; j <= state->max_gain; j++)
-        hdcd_log(state->log, "%s""tg %0.1f: %d\n", GAINTOFLOAT(j), state->gain_counts[j]);
+        hdcd_log(state->log, "%s""tg %0.1f: %d\n", chantag, GAINTOFLOAT(j), state->gain_counts[j]);
 
 }
