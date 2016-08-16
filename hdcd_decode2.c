@@ -890,7 +890,7 @@ void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, u
 void hdcd_reset(hdcd_state_t *state, unsigned rate) {
     hdcd_reset_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
 }
-void set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode) {
+void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode) {
     state->ana_mode = mode;
 }
 
@@ -904,7 +904,7 @@ void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustai
 void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate) {
     hdcd_reset_stereo_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
 }
-void set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode) {
+void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode) {
     state->ana_mode = mode;
     set_analyze_mode(&state->channel[0], mode);
     set_analyze_mode(&state->channel[1], mode);

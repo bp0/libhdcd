@@ -64,9 +64,9 @@ Analyze mode
 ============
 
 A mode to aid in analysis of HDCD encoded audio. In this mode the audio is replaced by a solid tone and the amplitude is adjusted to signal some specified aspect of the process. The output can be loaded in an audio editor alongside the original, where the user can see where different features or states are present.
-See hdcd_ana_mode_t in hdcd_decoder2.h.
+See hdcd_ana_mode_t in hdcd_decoder2.h. See also [HDCD § Analyze mode](http://wiki.hydrogenaud.io/index.php?title=High_Definition_Compatible_Digital#Analyze_mode)
 
-    set_analyze_mode(MODE);
+    hdcd_set_analyze_mode(MODE);
 
-    set_analyze_mode_stereo(MODE);
+    hdcd_set_analyze_mode_stereo(MODE);
 
