@@ -6,21 +6,16 @@
    Original code reverse engineered from HDCD decoder library by Christopher Key,
    which was likely reverse engineered from Windows Media Player.
 
-   Redistribution and use in source and binary forms, with or without
-   modification, are permitted provided that the following conditions
-   are met:
-
+   Redistribution and use in source and binary forms, with or without modification,
+   are permitted provided that the following conditions are met:
      1. Redistributions of source code must retain the above copyright
         notice, this list of conditions and the following disclaimer.
-
      2. Redistributions in binary form must reproduce the above copyright
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
-
      3. The names of its contributors may not be used to endorse or promote
         products derived from this software without specific prior written
         permission.
-
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -47,44 +42,59 @@
 #define _HDCD_DECODE2_H_
 
 #include <stdint.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define HDCD_FLAG_FORCE_PE      1
+
+typedef void (*hdcd_logfunc)(const void *priv, const char* fmt, va_list args);
+
 typedef struct {
+    int enable;
+    void *priv;
+    hdcd_logfunc log_func;
+} hdcd_log_t;
+
+typedef struct {
+    uint8_t decoder_options;  /**< as flags HDCD_FLAG_* */
+
     uint64_t window;
     unsigned char readahead;
 
-    /* arg is set when a packet prefix is found.
-     * control is the active control code, where
-     * bit 0-3: target_gain, 4-bit (3.1) fixed-point value
-     * bit 4  : peak_extend
-     * bit 5  : transient_filter
-     * bit 6,7: always zero */
-    unsigned char arg, control;
-    unsigned sustain, sustain_reset; /* code detect timer */
+    /** arg is set when a packet prefix is found.
+     *  control is the active control code, where
+     *  bit 0-3: target_gain, 4-bit (3.1) fixed-point value
+     *  bit 4  : peak_extend
+     *  bit 5  : transient_filter
+     *  bit 6,7: always zero */
+    uint8_t arg, control;
+    unsigned int sustain, sustain_reset; /**< code detect timer */
 
-    int running_gain; /* 11-bit (3.8) fixed point, extended from target_gain */
+    int running_gain; /**< 11-bit (3.8) fixed point, extended from target_gain */
 
-    /* counters */
-    int code_counterA;            /* 8-bit format packet */
-    int code_counterA_almost;     /* looks like an A code, but a bit expected to be 0 is 1 */
-    int code_counterB;            /* 16-bit format packet, 8-bit code, 8-bit XOR of code */
-    int code_counterB_checkfails; /* looks like a B code, but doesn't pass the XOR check */
-    int code_counterC;            /* packet prefix was found, expect a code */
-    int code_counterC_unmatched;  /* told to look for a code, but didn't find one */
-    int count_peak_extend;        /* valid packets where peak_extend was enabled */
-    int count_transient_filter;   /* valid packets where filter was detected */
-    /* target_gain is a 4-bit (3.1) fixed-point value, always
-     * negative, but stored positive.
-     * The 16 possible values range from -7.5 to 0.0 dB in
-     * steps of 0.5, but no value below -6.0 dB should appear. */
-    int gain_counts[16]; /* for cursiosity, mostly */
+    /** counters */
+    int code_counterA;            /**< 8-bit format packet */
+    int code_counterA_almost;     /**< looks like an A code, but a bit expected to be 0 is 1 */
+    int code_counterB;            /**< 16-bit format packet, 8-bit code, 8-bit XOR of code */
+    int code_counterB_checkfails; /**< looks like a B code, but doesn't pass the XOR check */
+    int code_counterC;            /**< packet prefix was found, expect a code */
+    int code_counterC_unmatched;  /**< told to look for a code, but didn't find one */
+    int count_peak_extend;        /**< valid packets where peak_extend was enabled */
+    int count_transient_filter;   /**< valid packets where filter was detected */
+    /** target_gain is a 4-bit (3.1) fixed-point value, always
+     *  negative, but stored positive.
+     *  The 16 possible values range from -7.5 to 0.0 dB in
+     *  steps of 0.5, but no value below -6.0 dB should appear. */
+    int gain_counts[16];
     int max_gain;
-    /* occurences of code detect timer expiring without detecting
-     * a code. -1 for timer never set. */
+    /** occurences of code detect timer expiring without detecting
+     *  a code. -1 for timer never set. */
     int count_sustain_expired;
+
+    hdcd_log_t *log;
 } hdcd_state_t;
 
 typedef struct {
@@ -94,29 +104,58 @@ typedef struct {
 } hdcd_state_stereo_t;
 
 typedef enum {
-    HDCD_PE_NEVER        = 0,
-    HDCD_PE_INTERMITTENT = 1,
-    HDCD_PE_PERMANENT    = 2,
+    HDCD_NONE            = 0,
+    HDCD_NO_EFFECT       = 1,  /**< HDCD packets appear, but all control codes are NOP */
+    HDCD_EFFECTUAL       = 2,  /**< HDCD packets appear, and change the output in some way */
+} hdcd_detection_t;
+
+typedef enum {
+    HDCD_PE_NEVER        = 0, /**< All valid packets have PE set to off */
+    HDCD_PE_INTERMITTENT = 1, /**< Some valid packets have PE set to on */
+    HDCD_PE_PERMANENT    = 2, /**< All valid packets have PE set to on  */
 } hdcd_pe_t;
 
+typedef enum {
+    HDCD_PVER_NONE       = 0, /**< No packets discovered */
+    HDCD_PVER_A          = 1, /**< Packets of type A (8-bit control) discovered */
+    HDCD_PVER_B          = 2, /**< Packets of type B (8-bit control, 8-bit XOR) discovered */
+    HDCD_PVER_MIX        = 3, /**< Packets of type A and B discovered, most likely an error? */
+} hdcd_pktver_t;
+
 typedef struct {
-    int hdcd_detected;
-    int errors;                /* detectable errors */
+    hdcd_detection_t hdcd_detected;
+    hdcd_pktver_t packet_type;
+    int total_packets;         /**< valid packets */
+    int errors;                /**< detectable errors */
     hdcd_pe_t peak_extend;
     int uses_transient_filter;
-    float max_gain_adjustment; /* in dB, expected in the range -7.5 to 0.0 */
+    float max_gain_adjustment; /**< in dB, expected in the range -7.5 to 0.0 */
+    int cdt_expirations;       /**< -1 for never set, 0 for set but never expired */
+
+    int _active_count;
 } hdcd_detection_data_t;
 
-void hdcd_reset(hdcd_state_t *state, unsigned rate);
+void hdcd_log_init(hdcd_log_t *log, hdcd_logfunc func, void *priv);
+void hdcd_log(hdcd_log_t *log, const char* fmt, ...);
+void hdcd_log_enable(hdcd_log_t *log);
+void hdcd_log_disable(hdcd_log_t *log);
+
+void hdcd_reset(hdcd_state_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_log_t *log);
+
 void hdcd_process(hdcd_state_t *state, int *samples, int count, int stride);
 
-void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate);
+void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_log_t *log);
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 
 void hdcd_detect_reset(hdcd_detection_data_t *detect);
-void hdcd_detect_str(hdcd_detection_data_t *detect, char *str); /* char str[256] should be enough */
-/* there isn't a non-stereo version */
+
+void hdcd_detect_start(hdcd_detection_data_t *detect);
+void hdcd_detect_onech(hdcd_state_t *state, hdcd_detection_data_t *detect);
+void hdcd_detect_end(hdcd_detection_data_t *detect, int channels);
+/* combines _start() _onech()(x2) _end */
 void hdcd_detect_stereo(hdcd_state_stereo_t *state, hdcd_detection_data_t *detect);
+
+void hdcd_detect_str(hdcd_detection_data_t *detect, char *str); /* char str[256] should be enough */
 
 #ifdef __cplusplus
 }
