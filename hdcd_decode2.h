@@ -84,6 +84,7 @@ static const char* hdcd_str_ana_mode(hdcd_ana_mode_t v);
 /********************* decoding ********************************/
 
 #define HDCD_FLAG_FORCE_PE         128
+#define HDCD_FLAG_TGM_LOG_OFF       64
 
 typedef struct {
     uint8_t decoder_options;  /**< as flags HDCD_FLAG_* */
@@ -122,8 +123,10 @@ typedef struct {
     int count_sustain_expired;
 
     hdcd_log_t *log;
+    int sample_count;           /**< used in logging */
     hdcd_ana_mode_t ana_mode;
     int _ana_snb;
+
 } hdcd_state_t;
 
 typedef struct {

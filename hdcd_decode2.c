@@ -885,6 +885,7 @@ void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, u
     state->count_sustain_expired = -1;
 
     state->log = log;
+    state->sample_count = 0;
     state->ana_mode = analyze_mode;
 }
 void hdcd_reset(hdcd_state_t *state, unsigned rate) {
@@ -906,8 +907,8 @@ void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate) {
 }
 void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode) {
     state->ana_mode = mode;
-    set_analyze_mode(&state->channel[0], mode);
-    set_analyze_mode(&state->channel[1], mode);
+    hdcd_set_analyze_mode(&state->channel[0], mode);
+    hdcd_set_analyze_mode(&state->channel[1], mode);
 }
 
 
@@ -990,12 +991,18 @@ static int hdcd_integrate(hdcd_state_t *state, int *flag, const int32_t *samples
                 break;
             case HDCD_CODE_A_ALMOST:
                 state->code_counterA_almost++;
+                hdcd_log(state->log,
+                    "hdcd error: Control A almost: 0x%02x near %d\n", bits & 0xff, state->sample_count);
                 break;
             case HDCD_CODE_B_CHECKFAIL:
                 state->code_counterB_checkfails++;
+                hdcd_log(state->log,
+                    "hdcd error: Control B check failed: 0x%04x (0x%02x vs 0x%02x) near %d\n", bits & 0xffff, (bits & 0xff00) >> 8, ~bits & 0xff, state->sample_count);
                 break;
             case HDCD_CODE_NONE:
                 state->code_counterC_unmatched++;
+                hdcd_log(state->log,
+                    "hdcd error: Unmatched code: 0x%08x near %d\n", bits, state->sample_count);
         }
         if (*flag) hdcd_update_info(state);
         state->arg = 0;
@@ -1048,12 +1055,18 @@ static int hdcd_integrate_stereo(hdcd_state_stereo_t *state, int *flag, const in
                         break;
                     case HDCD_CODE_A_ALMOST:
                         state->channel[i].code_counterA_almost++;
+                        hdcd_log(state->channel[i].log,
+                            "hdcd error: Control A almost: 0x%02x near %d\n", wbits & 0xff, state->channel[i].sample_count);
                         break;
                     case HDCD_CODE_B_CHECKFAIL:
                         state->channel[i].code_counterB_checkfails++;
+                        hdcd_log(state->channel[i].log,
+                            "hdcd error: Control B check failed: 0x%04x (0x%02x vs 0x%02x) near %d\n", wbits & 0xffff, (wbits & 0xff00) >> 8, ~wbits & 0xff, state->channel[i].sample_count);
                         break;
                     case HDCD_CODE_NONE:
                         state->channel[i].code_counterC_unmatched++;
+                        hdcd_log(state->channel[i].log,
+                            "hdcd error: Unmatched code: 0x%08x near %d\n", wbits, state->channel[i].sample_count);
                 }
                 if (*flag&(i+1)) hdcd_update_info(&state->channel[i]);
                 state->channel[i].arg = 0;
@@ -1322,6 +1335,14 @@ static hdcd_control_result_t hdcd_control_stereo(hdcd_state_stereo_t *state, int
         state->val_target_gain = target_gain[0];
     else {
         state->count_tg_mismatch++;
+        if (!(state->channel[0].decoder_options & HDCD_FLAG_TGM_LOG_OFF)) {
+            hdcd_log(state->channel[0].log,
+               "hdcd error: Unmatched target_gain near %d: tg0: %0.1f, tg1: %0.1f, lvg: %0.1f\n",
+               state->channel[0].sample_count,
+               GAINTOFLOAT(target_gain[0] >>7),
+               GAINTOFLOAT(target_gain[1] >>7),
+               GAINTOFLOAT(state->val_target_gain >>7) );
+        }
         return HDCD_TG_MISMATCH;
     }
     return HDCD_OK;
@@ -1363,6 +1384,7 @@ void hdcd_process(hdcd_state_t *state, int32_t *samples, int count, int stride)
     }
 
     state->running_gain = gain;
+    state->sample_count += count;
 }
 
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int32_t *samples, int count)
@@ -1424,6 +1446,9 @@ void hdcd_process_stereo(hdcd_state_stereo_t *state, int32_t *samples, int count
 
     state->channel[0].running_gain = gain[0];
     state->channel[1].running_gain = gain[1];
+
+    state->channel[0].sample_count += count;
+    state->channel[1].sample_count += count;
 }
 
 void hdcd_detect_reset(hdcd_detection_data_t *detect) {
