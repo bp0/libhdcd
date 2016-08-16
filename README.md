@@ -22,7 +22,7 @@ For any number of channels, process one at a time.
 
 #### Each frame
     /* foreach(channel) */
-        hdcd_process(&state[channel], *samples, count, nb_channels);
+        hdcd_process(&state[channel], samples, count, nb_channels);
 
 
 Simplest use (stereo functions)
@@ -52,7 +52,7 @@ HDCD detection functions
 ### Each frame (n-channel)
     hdcd_detect_start(&detect);
     /* foreach(channel) */
-        hdcd_process(&state[channel], *samples, count, nb_channels);
+        hdcd_process(&state[channel], samples, count, nb_channels);
         hdcd_detect_onech(&state[channel], &detect);
     hdcd_detect_end(&detect, nb_channels);
 
