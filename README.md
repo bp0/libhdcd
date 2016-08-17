@@ -37,7 +37,7 @@ When there are exactly two stereo channels, target_gain matching is enabled.
     hdcd_reset_stereo(&state_stereo, sample_rate);
 
 #### Each frame
-    hdcd_process_stereo(&state_stereo, *samples, count);
+    hdcd_process_stereo(&state_stereo, samples, count);
 
 
 HDCD detection functions
@@ -57,8 +57,8 @@ HDCD detection functions
     hdcd_detect_end(&detect, nb_channels);
 
 ### Each frame (stereo)
-    hdcd_process_stereo(&state_stereo, *samples, count);
-    hdcd_detect_stereo(&state_stereo, detect);
+    hdcd_process_stereo(&state_stereo, samples, count);
+    hdcd_detect_stereo(&state_stereo, &detect);
 
 ### Use detection data
     char dstr[256];
