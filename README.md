@@ -44,7 +44,7 @@ HDCD detection functions
 ------------------------
 
 ### Declare
-    hdcd_detection_t detect;
+    hdcd_detection_data_t detect;
 
 ### Initialize
     hdcd_detect_reset(&detect);
