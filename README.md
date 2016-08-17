@@ -60,6 +60,16 @@ HDCD detection functions
     hdcd_process_stereo(&state_stereo, *samples, count);
     hdcd_detect_stereo(&state_stereo, detect);
 
+### Use detection data
+    char dstr[256];
+    hdcd_detect_str(&detect, dstr, sizeof(dstr));
+    printf("%s\n", dstr);
+    
+Example output:
+> HDCD detected: yes (B:3893), peak_extend: enabled permanently, max_gain_adj: -4.0 dB, transient_filter: detected, detectable errors: 0
+
+See `hdcd_detect_str()` in hdcd_decode2.c for an example of using individual `hdcd_detection_t` members.
+
 Analyze mode
 ============
 
