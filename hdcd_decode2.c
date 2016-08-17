@@ -867,6 +867,9 @@ void hdcd_log(hdcd_log_t *log, const char* fmt, ...) {
 void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log)
 {
     int i;
+    if (!state) return;
+    if (!rate) rate = 44100;
+
     state->decoder_options = flags;
 
     state->window = 0;
@@ -898,13 +901,20 @@ void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, u
     state->ana_mode = analyze_mode;
 }
 void hdcd_reset(hdcd_state_t *state, unsigned rate) {
+    if (!state) return;
     hdcd_reset_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
 }
 void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode) {
+    if (!state) return;
     state->ana_mode = mode;
+}
+void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log) {
+    if (!state) return;
+    state->log = log;
 }
 
 void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log) {
+    if (!state) return;
     state->ana_mode = analyze_mode;
     hdcd_reset_ext(&state->channel[0], rate, sustain_period_ms, flags, analyze_mode, log);
     hdcd_reset_ext(&state->channel[1], rate, sustain_period_ms, flags, analyze_mode, log);
@@ -912,14 +922,20 @@ void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustai
     state->count_tg_mismatch = 0;
 }
 void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate) {
+    if (!state) return;
     hdcd_reset_stereo_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
 }
 void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode) {
+    if (!state) return;
     state->ana_mode = mode;
     hdcd_set_analyze_mode(&state->channel[0], mode);
     hdcd_set_analyze_mode(&state->channel[1], mode);
 }
-
+void hdcd_attach_logger_stereo(hdcd_state_stereo_t *state, hdcd_log_t *log) {
+    if (!state) return;
+    state->channel[0].log = log;
+    state->channel[1].log = log;
+}
 
 /* update the user info/counters */
 static void hdcd_update_info(hdcd_state_t *state)

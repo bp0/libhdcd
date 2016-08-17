@@ -42,6 +42,7 @@ int main(int argc, char *argv[]) {
 
     hdcd_detection_data_t detect;
     hdcd_state_stereo_t state_stereo;
+    hdcd_log_t logger;
     char dstr[256];
 
     if (argc < 2) {
@@ -75,6 +76,8 @@ int main(int argc, char *argv[]) {
 
     hdcd_reset_stereo(&state_stereo, sample_rate);
     hdcd_detect_reset(&detect);
+    hdcd_log_init(&logger);
+    hdcd_attach_logger_stereo(&state_stereo, &logger);
 
     set_size = channels * (bits_per_sample>>3);
     input_size = set_size * frame_length;

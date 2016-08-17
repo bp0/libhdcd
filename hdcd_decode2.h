@@ -147,13 +147,15 @@ typedef enum {
 void hdcd_reset(hdcd_state_t *state, unsigned rate);
 void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
 void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode);
+void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log);
 void hdcd_process(hdcd_state_t *state, int *samples, int count, int stride);
 
 /* stereo versions */
 void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate);
 void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
-void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode);
+void hdcd_attach_logger_stereo(hdcd_state_stereo_t *state, hdcd_log_t *log);
+void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 
 /********************* optional detection and stats ************/
 
