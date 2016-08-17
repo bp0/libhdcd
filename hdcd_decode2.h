@@ -123,32 +123,33 @@ typedef struct {
      *  a code. -1 for timer never set. */
     int count_sustain_expired;
 
-    hdcd_log_t *log;
-    int sample_count;           /**< used in logging */
-    hdcd_ana_mode_t ana_mode;
-    int _ana_snb;
+    hdcd_log_t *log;            /**< optional logging */
+    int sample_count;           /**< used in logging  */
+    hdcd_ana_mode_t ana_mode;   /**< analyze mode     */
+    int _ana_snb;               /**< used in the analyze mode tone generator */
 
 } hdcd_state_t;
 
 typedef struct {
-    hdcd_state_t channel[2];
-    hdcd_ana_mode_t ana_mode;
-    int val_target_gain;
-    int count_tg_mismatch;
+    hdcd_state_t channel[2];    /**< individual channel states       */
+    hdcd_ana_mode_t ana_mode;   /**< analyze mode                    */
+    int val_target_gain;        /**< last valid matching target_gain */
+    int count_tg_mismatch;      /**< target_gain mismatch occurred.  */
 } hdcd_state_stereo_t;
 
 typedef enum {
-    HDCD_NONE            = 0,
+    HDCD_NONE            = 0,  /**< HDCD packets do not (yet) appear  */
     HDCD_NO_EFFECT       = 1,  /**< HDCD packets appear, but all control codes are NOP */
     HDCD_EFFECTUAL       = 2,  /**< HDCD packets appear, and change the output in some way */
 } hdcd_detection_t;
 
+/* n-channel versions */
 void hdcd_reset(hdcd_state_t *state, unsigned rate);
 void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
 void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode);
-
 void hdcd_process(hdcd_state_t *state, int *samples, int count, int stride);
 
+/* stereo versions */
 void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate);
 void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
@@ -190,10 +191,14 @@ void hdcd_detect_end(hdcd_detection_data_t *detect, int channels);
 /* combines _start() _onech()(x2) _end */
 void hdcd_detect_stereo(hdcd_state_stereo_t *state, hdcd_detection_data_t *detect);
 
+/* get a string describing the PE status */
 const char* hdcd_detect_str_pe(hdcd_pe_t v);
+/* get a string describing the packet format found */
 const char* hdcd_detect_str_pformat(hdcd_pf_t v);
+/* get a string with an HDCD detection summary */
 void hdcd_detect_str(hdcd_detection_data_t *detect, char *str, int maxlen); /* [256] should be enough */
 
+/* dump the hdcd_state_t struct to a the log */
 void hdcd_dump_state_to_log(hdcd_state_t *state, int channel);
 
 #ifdef __cplusplus
