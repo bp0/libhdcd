@@ -25,12 +25,99 @@
 #include "wavreader.h"
 
 void usage(const char* name) {
-    fprintf(stderr, "%s in.wav\n", name);
+    fprintf(stderr, "HDCD detect/decode\n\n");
+    fprintf(stderr, "Usage:\n %s in.wav [out.wav]\n", name);
+    fprintf(stderr, "    in.wav must be a s16, stereo, 44100Hz wav file\n");
+    fprintf(stderr, "    out.wav will be s32; will not prompt for overwrite\n");
+}
+
+typedef struct {
+    FILE *fp;
+    uint32_t size;
+
+    int length_loc;
+    int data_size_loc;
+} wavw_t;
+
+int fwrite_int16el(int16_t v, FILE *fp) {
+    const uint8_t b[2] = {
+        (uint16_t)v & 0xff,
+        (uint16_t)v >> 8,
+    };
+    return fwrite(&b, 1, 2, fp);
+}
+
+int fwrite_int32el(int32_t v, FILE *fp) {
+    const uint8_t b[4] = {
+        (uint32_t)v & 0xff,
+        ((uint32_t)v >> 8) & 0xff,
+        ((uint32_t)v >> 16) & 0xff,
+        ((uint32_t)v >> 24),
+    };
+    return fwrite(&b, 1, 4, fp);
+}
+
+wavw_t* wav_write_open(const char *file_name) {
+    int16_t channels = 2;
+    int16_t bits_per_sample = 32;
+    int32_t sample_rate = 44100;
+
+    int32_t size = 0;
+    int32_t length = size + 44 - 8;
+    int32_t bytes_per_second = channels * sample_rate * bits_per_sample/8;
+    int16_t bytes_per_sample = channels * bits_per_sample/8;
+
+    wavw_t* wav = malloc(sizeof(wavw_t));
+    if (!wav) return NULL;
+
+    FILE *fp = fopen(file_name, "wb");
+    if(!fp) {
+        free(wav);
+        return NULL;
+    }
+    fwrite("RIFF", 1, 4, fp);
+    wav->length_loc = ftell(fp);
+    fwrite_int32el(length, fp);
+    fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, fp);
+    fwrite_int16el(channels, fp);
+    fwrite_int32el(sample_rate, fp);
+    fwrite_int32el(bytes_per_second, fp);
+    fwrite_int16el(bytes_per_sample, fp);
+    fwrite_int16el(bits_per_sample, fp);
+    fwrite("data", 1, 4, fp);
+    wav->data_size_loc = ftell(fp);
+    fwrite_int32el(size, fp);
+    wav->fp = fp;
+    wav->size = size;
+    return wav;
+}
+
+int wav_write(wavw_t *wav, const int32_t *samples, int count) {
+    int i;
+    size_t elw = 0;
+
+    if (!wav) return 1;
+    for (i = 0; i < count; i++)
+        elw += fwrite_int32el(samples[i], wav->fp);
+
+    wav->size += sizeof(int32_t) * elw;
+}
+
+int wav_write_close(wavw_t *wav) {
+    fseek(wav->fp, wav->length_loc, SEEK_SET);
+    fwrite_int32el(wav->size + 44 - 8 , wav->fp);
+    fseek(wav->fp, wav->data_size_loc, SEEK_SET);
+    fwrite_int32el(wav->size, wav->fp);
+    fclose(wav->fp);
+    free(wav);
 }
 
 int main(int argc, char *argv[]) {
     const char *infile;
+    const char *outfile = NULL;
     void *wav;
+    wavw_t *wav_out;
+
     int format, sample_rate, channels, bits_per_sample;
     int frame_length = 2048;
     int input_size;
@@ -38,7 +125,7 @@ int main(int argc, char *argv[]) {
     uint8_t* input_buf;
     int16_t* convert_buf;
     int32_t* process_buf;
-    int i, read, count;
+    int i, read, count, full_count = 0;
 
     hdcd_detection_data_t detect;
     hdcd_state_stereo_t state_stereo;
@@ -50,9 +137,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     infile = argv[1];
+    if (argc == 3) outfile = argv[2];
 
     wav = wav_read_open(infile);
-
     if (!wav) {
         fprintf(stderr, "Unable to open wav file %s\n", infile);
         return 1;
@@ -72,6 +159,11 @@ int main(int argc, char *argv[]) {
     if (channels != 2) {
         fprintf(stderr, "Unsupported WAV channels %d\n", channels);
         return 1;
+    }
+
+    if (outfile) {
+        wav_out = wav_write_open(outfile);
+        if (!wav_out) return 1;
     }
 
     hdcd_reset_stereo(&state_stereo, sample_rate);
@@ -99,14 +191,20 @@ int main(int argc, char *argv[]) {
 
         hdcd_process_stereo(&state_stereo, process_buf, count);
         hdcd_detect_stereo(&state_stereo, &detect);
+
+        if (outfile) wav_write(wav_out, process_buf, count * channels);
+
+        full_count += count;
         if (read < input_size) break; // eof
     }
     hdcd_detect_str(&detect, dstr, sizeof(dstr));
+    printf("%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     printf("%s\n", dstr);
 
     free(input_buf);
     free(process_buf);
     wav_read_close(wav);
+    if (outfile) wav_write_close(wav_out);
 
     return 0;
 }
