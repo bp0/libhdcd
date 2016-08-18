@@ -899,6 +899,7 @@ void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, u
     state->log = log;
     state->sample_count = 0;
     state->ana_mode = analyze_mode;
+    state->_ana_snb = 0;
 }
 void hdcd_reset(hdcd_state_t *state, unsigned rate) {
     if (!state) return;
@@ -1198,7 +1199,7 @@ static int hdcd_scan_stereo(hdcd_state_stereo_t *state, const int32_t *samples, 
 /** replace audio with solid tone, but save LSBs */
 void hdcd_analyze_prepare(hdcd_state_t *state, int32_t *samples, int count, int stride) {
     int n;
-    for (n = 0; n < count; n += stride) {
+    for (n = 0; n < count * stride; n += stride) {
         /* in analyze mode, the audio is replaced by a solid tone, and
          * amplitude is changed to signal when the specified feature is
          * used.
