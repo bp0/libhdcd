@@ -50,6 +50,7 @@ extern "C" {
 
 #define HDCD_DECODE2_VER_MAJOR 2
 #define HDCD_DECODE2_VER_MINOR 1
+#define HDCD_DECODE2_VER_MICRO 0
 /** fills major and minor with the version of the built library
  *
  * int major = HDCD_DECODE2_VER_MAJOR, minor = HDCD_DECODE2_VER_MINOR;
