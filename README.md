@@ -1,5 +1,20 @@
 HDCD decoder code, originally in foo_hdcd, then developed further as part of FFmpeg, then made into this generic form.
 
+Building
+--------
+
+In order to build the library from **git** you need [GNU build system][autotools]:
+
+    autoreconf -ivf
+
+And then use the normal configure & make:
+
+    ./configure
+    make
+    make install
+
+[autotools]: https://autotools.io
+
 Features
 --------
 
@@ -64,7 +79,7 @@ HDCD detection functions
     char dstr[256];
     hdcd_detect_str(&detect, dstr, sizeof(dstr));
     printf("%s\n", dstr);
-    
+
 Example output:
 > HDCD detected: yes (B:3893), peak_extend: enabled permanently, max_gain_adj: -4.0 dB, transient_filter: detected, detectable errors: 0
 
