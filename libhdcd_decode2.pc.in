@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: hdcd_decode2
+Description: hdcd decoder
+URL: http://
+Version: @HDCD_ABI_VERSION@
+Requires:
+Libs: -L${libdir} -lhdcd_decode2
+Libs.private: @LIBS@
+Cflags: -I${includedir}
