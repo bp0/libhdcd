@@ -15,6 +15,3 @@ rm -f hdcd_decode2.o
 rm -f hdcd-detect.o wavreader.o
 
 cd ..
-
-
-
