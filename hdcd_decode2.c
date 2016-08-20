@@ -833,6 +833,15 @@ void hdcd_analyze_prepare(hdcd_state_t *state, int32_t *samples, int count, int 
 /** tone generator: sample_number, frequency, sample_rate, amplitude */
 #define TONEGEN16(sn, f, sr, a) (int16_t)(sin((6.28318530718 * (sn) * (f)) /(sr)) * (a) * 0x7fff)
 
+int hdcd_lib_version(int* major, int* minor) {
+    int match = 0;
+    if (*major == HDCD_DECODE2_VER_MAJOR && *minor == HDCD_DECODE2_VER_MINOR)
+        match = 1;
+    *major = HDCD_DECODE2_VER_MAJOR;
+    *minor = HDCD_DECODE2_VER_MINOR;
+    return match;
+}
+
 void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
     vprintf(fmt, args);
 }

@@ -48,6 +48,15 @@
 extern "C" {
 #endif
 
+#define HDCD_DECODE2_VER_MAJOR 2
+#define HDCD_DECODE2_VER_MINOR 1
+/** fills major and minor with the version of the built library
+ *
+ * int major = HDCD_DECODE2_VER_MAJOR, minor = HDCD_DECODE2_VER_MINOR;
+ * ver_match = hdcd_lib_version(&major, &minor);
+ * */
+int hdcd_lib_version(int* major, int* minor);
+
 /********************* optional logging ************************/
 
 typedef void (*hdcd_log_callback)(const void *priv, const char* fmt, va_list args);

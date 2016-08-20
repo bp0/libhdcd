@@ -24,8 +24,10 @@
 #include "../hdcd_decode2.h"
 #include "wavreader.h"
 
+int lv_major = HDCD_DECODE2_VER_MAJOR;
+int lv_minor = HDCD_DECODE2_VER_MINOR;
+
 void usage(const char* name) {
-    fprintf(stderr, "HDCD detect/decode\n\n");
     fprintf(stderr, "Usage:\n %s in.wav [out.wav]\n", name);
     fprintf(stderr, "    in.wav must be a s16, stereo, 44100Hz wav file\n");
     fprintf(stderr, "    out.wav will be s32; will not prompt for overwrite\n");
@@ -131,6 +133,20 @@ int main(int argc, char *argv[]) {
     hdcd_state_stereo_t state_stereo;
     hdcd_log_t logger;
     char dstr[256];
+
+    int ver_match = hdcd_lib_version(&lv_major, &lv_minor);
+
+    fprintf(stderr, "HDCD detect/decode tool\n");
+    fprintf(stderr, "hdcd_decode2 version: %d.%d\n\n", lv_major, lv_minor);
+
+    if (!ver_match) {
+        fprintf(stderr, "Version mismatch. Built against: %d.%d\n",
+            HDCD_DECODE2_VER_MAJOR, HDCD_DECODE2_VER_MINOR);
+        if (lv_major != HDCD_DECODE2_VER_MAJOR) {
+            fprintf(stderr, "...exiting.\n");
+            return 1;
+        }
+    }
 
     if (argc < 2) {
         usage(argv[0]);
