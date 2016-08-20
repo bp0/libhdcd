@@ -4,8 +4,8 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: hdcd_decode2
-Description: hdcd decoder
-URL: http://
+Description: High Definition Compatible Digital (HDCD) decoder
+URL: https://github.com/bp0/hdcd_decode2
 Version: @HDCD_ABI_VERSION@
 Requires:
 Libs: -L${libdir} -lhdcd_decode2
