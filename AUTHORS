@@ -17,6 +17,10 @@ Burt P (bp0)
 Luca Barbato (lu-zero)
 * added an autotools-based build system to the library
 
+See also:
+https://github.com/bp0/libhdcd/commits/master
+https://github.com/kode54/foo_hdcd/commits/master
+https://github.com/FFmpeg/FFmpeg/commits/master/libavfilter/af_hdcd.c
 
 
 
