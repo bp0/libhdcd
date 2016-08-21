@@ -27,16 +27,16 @@ EXTRA_DIST =
 hdcd_includedir = $(includedir)/hdcd
 hdcd_include_HEADERS = hdcd_decode2.h
 
-lib_LTLIBRARIES = libhdcd_decode2.la
+lib_LTLIBRARIES = libhdcd.la
 
-libhdcd_decode2_la_SOURCES = hdcd_decode2.c
+libhdcd_la_SOURCES = hdcd_decode2.c
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libhdcd_decode2.pc
+pkgconfig_DATA = libhdcd.pc
 
-libhdcd_decode2_la_LDFLAGS = -version-info @HDCD_LIBTOOL_VERSION@
+libhdcd_la_LDFLAGS = -version-info @HDCD_LIBTOOL_VERSION@
 
-LDADD = libhdcd_decode2.la
+LDADD = libhdcd.la
 
 bin_PROGRAMS = hdcd-detect
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LIBNAME=libhdcd_decode2
+LIBNAME=libhdcd
 
 mkdir -p win-bin
 cd win-bin

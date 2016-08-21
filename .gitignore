@@ -33,7 +33,7 @@ missing
 test-driver
 doltcompile
 doltlibtool
-libhdcd_decode2.pc
+libhdcd.pc
 hdcd-detect
 *.tar.gz
 *.zip

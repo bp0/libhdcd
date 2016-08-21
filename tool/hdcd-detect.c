@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     int ver_match = hdcd_lib_version(&lv_major, &lv_minor);
 
     fprintf(stderr, "HDCD detect/decode tool\n");
-    fprintf(stderr, "hdcd_decode2 version: %d.%d\n\n", lv_major, lv_minor);
+    fprintf(stderr, "libhdcd version: %d.%d\n\n", lv_major, lv_minor);
 
     if (!ver_match) {
         fprintf(stderr, "Version mismatch. Built against: %d.%d\n",
