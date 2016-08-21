@@ -1,0 +1,22 @@
+Christopher Key 
+* reverse-engineered the Windows Media Player HDCD decoder 
+
+Chris Moeller (kode54) 
+* created a component for foobar2000, foo_hdcd, based on Key's work
+
+Gumboot 
+* optimized the fb2k code and converted it from C++ to C.
+
+Benjamin Steffes
+* created an HDCD filter in FFmpeg's libavfilter based on the fb2k component
+
+Burt P (bp0)
+* added the stereo processing with target_gain matching and analyze modes to the filter
+* created this stand-alone library based on the filter
+
+Luca Barbato (lu-zero)
+* added an autotools-based build system to the library
+
+
+
+
