@@ -36,6 +36,8 @@ void usage(const char* name) {
 typedef struct {
     FILE *fp;
     uint32_t size;
+    int16_t bits_per_sample;
+    int16_t bytes_per_sample;
 
     int length_loc;
     int data_size_loc;
@@ -49,6 +51,15 @@ int fwrite_int16el(int16_t v, FILE *fp) {
     return fwrite(&b, 1, 2, fp);
 }
 
+int fwrite_int24el(int32_t v, FILE *fp) {
+    const uint8_t b[3] = {
+        ((uint32_t)v >> 8) & 0xff,
+        ((uint32_t)v >> 16) & 0xff,
+        ((uint32_t)v >> 24),
+    };
+    return fwrite(&b, 1, 3, fp);
+}
+
 int fwrite_int32el(int32_t v, FILE *fp) {
     const uint8_t b[4] = {
         (uint32_t)v & 0xff,
@@ -59,9 +70,8 @@ int fwrite_int32el(int32_t v, FILE *fp) {
     return fwrite(&b, 1, 4, fp);
 }
 
-wavw_t* wav_write_open(const char *file_name) {
+wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
     int16_t channels = 2;
-    int16_t bits_per_sample = 32;
     int32_t sample_rate = 44100;
 
     int32_t size = 0;
@@ -91,6 +101,8 @@ wavw_t* wav_write_open(const char *file_name) {
     fwrite_int32el(size, fp);
     wav->fp = fp;
     wav->size = size;
+    wav->bits_per_sample = bits_per_sample;
+    wav->bytes_per_sample = bytes_per_sample;
     return wav;
 }
 
@@ -100,9 +112,12 @@ int wav_write(wavw_t *wav, const int32_t *samples, int count) {
 
     if (!wav) return 1;
     for (i = 0; i < count; i++)
-        elw += fwrite_int32el(samples[i], wav->fp);
+        if (wav->bits_per_sample == 24)
+            elw += fwrite_int24el(samples[i], wav->fp);
+        else if (wav->bits_per_sample == 32)
+            elw += fwrite_int32el(samples[i], wav->fp);
 
-    wav->size += sizeof(int32_t) * elw;
+    wav->size += elw;
 }
 
 int wav_write_close(wavw_t *wav) {
@@ -178,7 +193,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (outfile) {
-        wav_out = wav_write_open(outfile);
+        wav_out = wav_write_open(outfile, 24);
         if (!wav_out) return 1;
     }
 
