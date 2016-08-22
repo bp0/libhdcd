@@ -8,6 +8,6 @@ Description: High Definition Compatible Digital (HDCD) decoder
 URL: https://github.com/bp0/libhdcd
 Version: @HDCD_ABI_VERSION@
 Requires:
-Libs: -L${libdir} -lhdcd_decode2
+Libs: -L${libdir} -lhdcd
 Libs.private: @LIBS@
 Cflags: -I${includedir}
