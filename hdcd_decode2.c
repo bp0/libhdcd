@@ -817,10 +817,6 @@ static const int32_t gaintab[] = {
 #define FFMAX(x, y) ((x) >= (y) ? (x) : (y))
 #endif
 
-/* prototypes of local functions, to avoid warnings */
-void hdcd_default_logger(void *ignored, const char* fmt, va_list args);
-void hdcd_analyze_prepare(hdcd_state_t *state, int32_t *samples, int count, int stride);
-
 /** convert to float from 4-bit (3.1) fixed-point
  *  the always-negative value is stored positive, so make it negative */
 #define GAINTOFLOAT(g) (g) ? -(float)(g>>1) - ((g & 1) ? 0.5 : 0.0) : 0.0
@@ -841,7 +837,7 @@ int hdcd_lib_version(int* major, int* minor) {
     return match;
 }
 
-void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
+static void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
     vprintf(fmt, args);
 }
 
@@ -1205,7 +1201,7 @@ static int hdcd_scan_stereo(hdcd_state_stereo_t *state, const int32_t *samples, 
 }
 
 /** replace audio with solid tone, but save LSBs */
-void hdcd_analyze_prepare(hdcd_state_t *state, int32_t *samples, int count, int stride) {
+static void hdcd_analyze_prepare(hdcd_state_t *state, int32_t *samples, int count, int stride) {
     int n;
     for (n = 0; n < count * stride; n += stride) {
         /* in analyze mode, the audio is replaced by a solid tone, and
