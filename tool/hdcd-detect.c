@@ -31,7 +31,7 @@ int lv_minor = HDCD_DECODE2_VER_MINOR;
 void usage(const char* name) {
     fprintf(stderr, "Usage:\n %s in.wav [out.wav]\n", name);
     fprintf(stderr, "    in.wav must be a s16, stereo, 44100Hz wav file\n");
-    fprintf(stderr, "    out.wav will be s32; will not prompt for overwrite\n");
+    fprintf(stderr, "    out.wav will be s24; will not prompt for overwrite\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Alternate usage:\n %s - [-] <in.wav [>out.wav]\n", name);
     fprintf(stderr,
