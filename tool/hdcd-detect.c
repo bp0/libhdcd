@@ -28,7 +28,7 @@
 int lv_major = HDCD_DECODE2_VER_MAJOR;
 int lv_minor = HDCD_DECODE2_VER_MINOR;
 
-void usage(const char* name) {
+static void usage(const char* name) {
     fprintf(stderr, "Usage:\n %s in.wav [out.wav]\n", name);
     fprintf(stderr, "    in.wav must be a s16, stereo, 44100Hz wav file\n");
     fprintf(stderr, "    out.wav will be s24; will not prompt for overwrite\n");
@@ -50,7 +50,7 @@ typedef struct {
     int data_size_loc;
 } wavw_t;
 
-int fwrite_int16el(int16_t v, FILE *fp) {
+static int fwrite_int16el(int16_t v, FILE *fp) {
     const uint8_t b[2] = {
         (uint16_t)v & 0xff,
         (uint16_t)v >> 8,
@@ -58,7 +58,7 @@ int fwrite_int16el(int16_t v, FILE *fp) {
     return fwrite(&b, 1, 2, fp);
 }
 
-int fwrite_int24el(int32_t v, FILE *fp) {
+static int fwrite_int24el(int32_t v, FILE *fp) {
     const uint8_t b[3] = {
         ((uint32_t)v >> 8) & 0xff,
         ((uint32_t)v >> 16) & 0xff,
@@ -67,7 +67,7 @@ int fwrite_int24el(int32_t v, FILE *fp) {
     return fwrite(&b, 1, 3, fp);
 }
 
-int fwrite_int32el(int32_t v, FILE *fp) {
+static int fwrite_int32el(int32_t v, FILE *fp) {
     const uint8_t b[4] = {
         (uint32_t)v & 0xff,
         ((uint32_t)v >> 8) & 0xff,
@@ -77,7 +77,7 @@ int fwrite_int32el(int32_t v, FILE *fp) {
     return fwrite(&b, 1, 4, fp);
 }
 
-wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
+static wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
     int16_t channels = 2;
     int32_t sample_rate = 44100;
 
@@ -117,7 +117,7 @@ wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
     return wav;
 }
 
-int wav_write(wavw_t *wav, const int32_t *samples, int count) {
+static int wav_write(wavw_t *wav, const int32_t *samples, int count) {
     int i;
     size_t elw = 0;
 
@@ -131,7 +131,7 @@ int wav_write(wavw_t *wav, const int32_t *samples, int count) {
     wav->size += elw;
 }
 
-int wav_write_close(wavw_t *wav) {
+static int wav_write_close(wavw_t *wav) {
     if ( fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
         fwrite_int32el(wav->size + 44 - 8 , wav->fp);
     if ( fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
