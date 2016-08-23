@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-HEADER_FILE="hdcd_decode2.h"
+HEADER_FILE="hdcd_libversion.h"
 
 if [ ! -f $HEADER_FILE ]; then
     echo "abi_version.sh: error: $HEADER_FILE does not exist" 1>&2

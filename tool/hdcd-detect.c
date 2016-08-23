@@ -245,6 +245,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "%s\n", dstr);
 
     free(input_buf);
+    free(convert_buf);
     free(process_buf);
     wav_read_close(wav);
     shdcd_free(ctx);
