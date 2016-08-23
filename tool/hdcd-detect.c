@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     hdcd_state_stereo_t state_stereo;
     hdcd_log_t logger;
     */
-    hdcd_simple_t ctx;
+    hdcd_simple_t *ctx;
     char dstr[256];
 
     int ver_match = hdcd_lib_version(&lv_major, &lv_minor);

@@ -35,29 +35,29 @@
 extern "C" {
 #endif
 
-typedef void* hdcd_simple_t;
+typedef struct hdcd_simple_t hdcd_simple_t;
 
 /** create a new hdcd_simple context */
-hdcd_simple_t shdcd_new();
+hdcd_simple_t *shdcd_new(void);
 /** process 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz */
-void shdcd_process(hdcd_simple_t ctx, int *samples, int count);
+void shdcd_process(hdcd_simple_t *ctx, int *samples, int count);
 /** on a song change or something, reset the decoding state */
-void shdcd_reset(hdcd_simple_t ctx);
+void shdcd_reset(hdcd_simple_t *ctx);
 /** free the context when finished */
-void shdcd_free(hdcd_simple_t ctx);
+void shdcd_free(hdcd_simple_t *ctx);
 
 
 /** is HDCD encoding detected? */
-int shdcd_detected(hdcd_simple_t ctx);
+int shdcd_detected(hdcd_simple_t *ctx);
 /** get a string with an HDCD detection summary */
-void shdcd_detect_str(hdcd_simple_t ctx, char *str, int maxlen); /* [256] should be enough */
+void shdcd_detect_str(hdcd_simple_t *ctx, char *str, int maxlen); /* [256] should be enough */
 
 
 /** set a logging callback or use the default (print to stderr) */
 typedef void (*hdcd_log_callback)(const void *priv, const char* fmt, va_list args);
-int shdcd_attach_logger(hdcd_simple_t ctx, hdcd_log_callback func, void *priv);
-void shdcd_default_logger(hdcd_simple_t ctx);
-void shdcd_detach_logger(hdcd_simple_t ctx);
+int shdcd_attach_logger(hdcd_simple_t *ctx, hdcd_log_callback func, void *priv);
+void shdcd_default_logger(hdcd_simple_t *ctx);
+void shdcd_detach_logger(hdcd_simple_t *ctx);
 
 
 #ifdef __cplusplus
