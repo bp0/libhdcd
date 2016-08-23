@@ -38,6 +38,8 @@ libhdcd_la_LDFLAGS = -version-info @HDCD_LIBTOOL_VERSION@
 
 LDADD = libhdcd.la
 
+AM_CFLAGS = -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Werror=implicit-function-declaration -Werror=missing-prototypes
+
 bin_PROGRAMS = hdcd-detect
 
 hdcd_detect_SOURCES = \
