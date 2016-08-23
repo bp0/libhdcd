@@ -38,3 +38,5 @@ hdcd-detect
 *.tar.gz
 *.zip
 samp/
+win-bin/
+
