@@ -147,12 +147,6 @@ typedef struct {
     int count_tg_mismatch;      /**< target_gain mismatch occurred.  */
 } hdcd_state_stereo_t;
 
-typedef enum {
-    HDCD_NONE            = 0,  /**< HDCD packets do not (yet) appear  */
-    HDCD_NO_EFFECT       = 1,  /**< HDCD packets appear, but all control codes are NOP */
-    HDCD_EFFECTUAL       = 2,  /**< HDCD packets appear, and change the output in some way */
-} hdcd_detection_t;
-
 /* n-channel versions */
 void hdcd_reset(hdcd_state_t *state, unsigned rate);
 void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
@@ -168,6 +162,12 @@ void hdcd_attach_logger_stereo(hdcd_state_stereo_t *state, hdcd_log_t *log);
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 
 /********************* optional detection and stats ************/
+
+typedef enum {
+    HDCD_NONE            = 0,  /**< HDCD packets do not (yet) appear  */
+    HDCD_NO_EFFECT       = 1,  /**< HDCD packets appear, but all control codes are NOP */
+    HDCD_EFFECTUAL       = 2,  /**< HDCD packets appear, and change the output in some way */
+} hdcd_detection_t;
 
 typedef enum {
     HDCD_PE_NEVER        = 0, /**< All valid packets have PE set to off */
