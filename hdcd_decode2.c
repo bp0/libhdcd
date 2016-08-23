@@ -842,6 +842,7 @@ static void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
 }
 
 int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv) {
+    memset(log, 0, sizeof(*log));
     log->sid = HDCD_SID_LOGGER;
     if (!log) return -1;
     log->priv = priv;
@@ -875,6 +876,7 @@ void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, i
     if (!state) return;
     if (!rate) rate = 44100;
 
+    memset(state, 0, sizeof(*state));
     state->sid = HDCD_SID_STATE;
     state->decoder_options = flags;
 
@@ -922,6 +924,7 @@ void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log) {
 
 void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log) {
     if (!state) return;
+    memset(state, 0, sizeof(*state));
     state->sid = HDCD_SID_STATE_STEREO;
     state->ana_mode = analyze_mode;
     hdcd_reset_ext(&state->channel[0], rate, sustain_period_ms, flags, analyze_mode, log);
@@ -1484,6 +1487,8 @@ void hdcd_process_stereo(hdcd_state_stereo_t *state, int32_t *samples, int count
 }
 
 void hdcd_detect_reset(hdcd_detection_data_t *detect) {
+    if (!detect) return;
+    memset(detect, 0, sizeof(*detect));
     detect->sid = HDCD_SID_DETECTION_DATA;
     detect->hdcd_detected = HDCD_NONE;
     detect->packet_type = HDCD_PVER_NONE;
@@ -1497,6 +1502,7 @@ void hdcd_detect_reset(hdcd_detection_data_t *detect) {
 }
 
 void hdcd_detect_start(hdcd_detection_data_t *detect) {
+    if (!detect) return;
     detect->errors = 0;          /* re-sum every pass */
     detect->total_packets = 0;
     detect->_active_count = 0;   /* will need to match channels at hdcd_detect_end() */
@@ -1505,6 +1511,7 @@ void hdcd_detect_start(hdcd_detection_data_t *detect) {
 
 void hdcd_detect_onech(hdcd_state_t *state, hdcd_detection_data_t *detect) {
     hdcd_pe_t pe = HDCD_PE_NEVER;
+    if (!detect) return;
     detect->uses_transient_filter |= !!(state->count_transient_filter);
     detect->total_packets += state->code_counterA + state->code_counterB;
     if (state->code_counterA) detect->packet_type |= HDCD_PVER_A;
@@ -1530,6 +1537,7 @@ void hdcd_detect_onech(hdcd_state_t *state, hdcd_detection_data_t *detect) {
 }
 
 void hdcd_detect_end(hdcd_detection_data_t *detect, int channels) {
+    if (!detect) return;
     /* HDCD is detected if a valid packet is active in all
      * channels at the same time. */
     if (detect->_active_count == channels) {
@@ -1578,6 +1586,7 @@ const char* hdcd_str_ana_mode(hdcd_ana_mode_t v) {
 }
 
 void hdcd_detect_str(hdcd_detection_data_t *detect, char *str, int maxlen) {
+    if (!detect) return;
     /* create an HDCD detection data string for logging */
     if (detect->hdcd_detected)
         snprintf(str, maxlen,
@@ -1595,6 +1604,8 @@ void hdcd_detect_str(hdcd_detection_data_t *detect, char *str, int maxlen) {
 void hdcd_dump_state_to_log(hdcd_state_t *state, int channel) {
     int j;
     char chantag[128] = "";
+    if (!state) return;
+
     if (channel >= 0)
         snprintf(chantag, sizeof(chantag), "Channel %d: ", channel);
 
