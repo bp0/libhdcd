@@ -26,6 +26,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include "hdcd_decode2.h"
 #include "hdcd_simple.h"
 
@@ -39,8 +40,10 @@ typedef struct {
 hdcd_simple_t shdcd_new()
 {
     hdcd_simple_ctx_t *s = malloc(sizeof(hdcd_simple_ctx_t));
-    if (s)
+    if (s) {
+        memset(s, 0, sizeof(*s));
         shdcd_reset(s);
+    }
     return s;
 }
 
