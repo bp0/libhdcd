@@ -18,10 +18,15 @@ And then use the normal configure & make:
 Features
 --------
 
-* Basic HDCD decoding
+* HDCD decoding
 * Optional HDCD detection code
 * Optional Analyze mode
 * Optional logging callback interface
+
+Include
+-------
+
+    #include <hdcd/hdcd_decode2.h>
 
 Simplest use
 ------------
