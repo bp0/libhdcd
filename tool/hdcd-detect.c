@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../hdcd_decode2.h"
+#include "../hdcd_simple.h"
 #include "wavreader.h"
 
 int lv_major = HDCD_DECODE2_VER_MAJOR;
@@ -155,9 +155,12 @@ int main(int argc, char *argv[]) {
     int32_t* process_buf;
     int i, read, count, full_count = 0;
 
+    /*
     hdcd_detection_data_t detect;
     hdcd_state_stereo_t state_stereo;
     hdcd_log_t logger;
+    */
+    hdcd_simple_t ctx;
     char dstr[256];
 
     int ver_match = hdcd_lib_version(&lv_major, &lv_minor);
@@ -208,10 +211,8 @@ int main(int argc, char *argv[]) {
         if (!wav_out) return 1;
     }
 
-    hdcd_reset_stereo(&state_stereo, sample_rate);
-    hdcd_detect_reset(&detect);
-    hdcd_log_init(&logger);
-    hdcd_attach_logger_stereo(&state_stereo, &logger);
+    ctx = shdcd_new();
+    shdcd_default_logger(ctx);
 
     set_size = channels * (bits_per_sample>>3);
     input_size = set_size * frame_length;
@@ -231,15 +232,15 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < count * channels; i++)
             process_buf[i] = convert_buf[i];
 
-        hdcd_process_stereo(&state_stereo, process_buf, count);
-        hdcd_detect_stereo(&state_stereo, &detect);
+        shdcd_process(ctx, process_buf, count);
 
         if (outfile) wav_write(wav_out, process_buf, count * channels);
 
         full_count += count;
         if (read < input_size) break; // eof
     }
-    hdcd_detect_str(&detect, dstr, sizeof(dstr));
+    shdcd_detect_str(ctx, dstr, sizeof(dstr));
+
     fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     fprintf(stderr, "%s\n", dstr);
 

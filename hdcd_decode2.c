@@ -29,11 +29,11 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "hdcd_decode2.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "hdcd_decode2.h"
 
 #define PEAK_EXT_LEVEL 0x5981 /* + sizeof(peaktab)-1 = 0x8000  */
 static const uint32_t peaktab[0x2680] = {
@@ -837,17 +837,8 @@ enum {
     HDCD_SID_LOGGER          = 4,
 };
 
-int hdcd_lib_version(int* major, int* minor) {
-    int match = 0;
-    if (*major == HDCD_DECODE2_VER_MAJOR && *minor == HDCD_DECODE2_VER_MINOR)
-        match = 1;
-    *major = HDCD_DECODE2_VER_MAJOR;
-    *minor = HDCD_DECODE2_VER_MINOR;
-    return match;
-}
-
 static void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
-    vprintf(fmt, args);
+    vfprintf(stderr, fmt, args);
 }
 
 int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv) {

@@ -44,19 +44,11 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+#include "hdcd_libversion.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define HDCD_DECODE2_VER_MAJOR 2
-#define HDCD_DECODE2_VER_MINOR 1
-#define HDCD_DECODE2_VER_MICRO 0
-/** fills major and minor with the version of the built library
- *
- * int major = HDCD_DECODE2_VER_MAJOR, minor = HDCD_DECODE2_VER_MINOR;
- * ver_match = hdcd_lib_version(&major, &minor);
- * */
-int hdcd_lib_version(int* major, int* minor);
 
 /********************* optional logging ************************/
 
