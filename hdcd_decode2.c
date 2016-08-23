@@ -868,7 +868,7 @@ void hdcd_log(hdcd_log_t *log, const char* fmt, ...) {
     }
 }
 
-void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log)
+void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log)
 {
     int i;
     if (!state) return;
@@ -918,7 +918,7 @@ void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log) {
     state->log = log;
 }
 
-void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, uint8_t flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log) {
+void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log) {
     if (!state) return;
     state->ana_mode = analyze_mode;
     hdcd_reset_ext(&state->channel[0], rate, sustain_period_ms, flags, analyze_mode, log);
