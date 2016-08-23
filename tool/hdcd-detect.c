@@ -247,6 +247,7 @@ int main(int argc, char *argv[]) {
     free(input_buf);
     free(process_buf);
     wav_read_close(wav);
+    shdcd_free(ctx);
     if (outfile) wav_write_close(wav_out);
 
     return 0;
