@@ -37,3 +37,4 @@ libhdcd.pc
 hdcd-detect
 *.tar.gz
 *.zip
+samp/
