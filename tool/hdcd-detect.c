@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../hdcd_decode2.h"
 #include "wavreader.h"
 
@@ -31,6 +32,12 @@ void usage(const char* name) {
     fprintf(stderr, "Usage:\n %s in.wav [out.wav]\n", name);
     fprintf(stderr, "    in.wav must be a s16, stereo, 44100Hz wav file\n");
     fprintf(stderr, "    out.wav will be s32; will not prompt for overwrite\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Alternate usage:\n %s - [-] <in.wav [>out.wav]\n", name);
+    fprintf(stderr,
+        "    When using stdout with a pipe (non-seekable),\n"
+        "    the wav header will not have a correct 'size',\n"
+        "    but will otherwise work.\n");
 }
 
 typedef struct {
@@ -82,7 +89,11 @@ wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
     wavw_t* wav = malloc(sizeof(wavw_t));
     if (!wav) return NULL;
 
-    FILE *fp = fopen(file_name, "wb");
+    FILE *fp;
+    if (strcmp(file_name, "-") == 0)
+        fp = stdout;
+    else
+        fp = fopen(file_name, "wb");
     if(!fp) {
         free(wav);
         return NULL;
@@ -121,10 +132,10 @@ int wav_write(wavw_t *wav, const int32_t *samples, int count) {
 }
 
 int wav_write_close(wavw_t *wav) {
-    fseek(wav->fp, wav->length_loc, SEEK_SET);
-    fwrite_int32el(wav->size + 44 - 8 , wav->fp);
-    fseek(wav->fp, wav->data_size_loc, SEEK_SET);
-    fwrite_int32el(wav->size, wav->fp);
+    if ( fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
+        fwrite_int32el(wav->size + 44 - 8 , wav->fp);
+    if ( fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
+        fwrite_int32el(wav->size, wav->fp);
     fclose(wav->fp);
     free(wav);
 }
@@ -229,8 +240,8 @@ int main(int argc, char *argv[]) {
         if (read < input_size) break; // eof
     }
     hdcd_detect_str(&detect, dstr, sizeof(dstr));
-    printf("%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
-    printf("%s\n", dstr);
+    fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
+    fprintf(stderr, "%s\n", dstr);
 
     free(input_buf);
     free(process_buf);
