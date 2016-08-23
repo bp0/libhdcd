@@ -842,9 +842,9 @@ static void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
 }
 
 int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv) {
+    if (!log) return -1;
     memset(log, 0, sizeof(*log));
     log->sid = HDCD_SID_LOGGER;
-    if (!log) return -1;
     log->priv = priv;
     if (func)
         log->log_func = func;
