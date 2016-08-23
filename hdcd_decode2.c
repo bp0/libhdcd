@@ -828,6 +828,15 @@ static const int32_t gaintab[] = {
 /** tone generator: sample_number, frequency, sample_rate, amplitude */
 #define TONEGEN16(sn, f, sr, a) (int16_t)(sin((6.28318530718 * (sn) * (f)) /(sr)) * (a) * 0x7fff)
 
+/** internal data structure identities **/
+enum {
+    HDCD_SID_UNDEF           = 0,
+    HDCD_SID_STATE           = 1,
+    HDCD_SID_STATE_STEREO    = 2,
+    HDCD_SID_DETECTION_DATA  = 3,
+    HDCD_SID_LOGGER          = 4,
+};
+
 int hdcd_lib_version(int* major, int* minor) {
     int match = 0;
     if (*major == HDCD_DECODE2_VER_MAJOR && *minor == HDCD_DECODE2_VER_MINOR)
@@ -842,6 +851,7 @@ static void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
 }
 
 int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv) {
+    log->sid = HDCD_SID_LOGGER;
     if (!log) return -1;
     log->priv = priv;
     if (func)
@@ -874,6 +884,7 @@ void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, i
     if (!state) return;
     if (!rate) rate = 44100;
 
+    state->sid = HDCD_SID_STATE;
     state->decoder_options = flags;
 
     state->window = 0;
@@ -920,6 +931,7 @@ void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log) {
 
 void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log) {
     if (!state) return;
+    state->sid = HDCD_SID_STATE_STEREO;
     state->ana_mode = analyze_mode;
     hdcd_reset_ext(&state->channel[0], rate, sustain_period_ms, flags, analyze_mode, log);
     hdcd_reset_ext(&state->channel[1], rate, sustain_period_ms, flags, analyze_mode, log);
@@ -1481,6 +1493,7 @@ void hdcd_process_stereo(hdcd_state_stereo_t *state, int32_t *samples, int count
 }
 
 void hdcd_detect_reset(hdcd_detection_data_t *detect) {
+    detect->sid = HDCD_SID_DETECTION_DATA;
     detect->hdcd_detected = HDCD_NONE;
     detect->packet_type = HDCD_PVER_NONE;
     detect->total_packets = 0;

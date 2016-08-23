@@ -63,6 +63,8 @@ int hdcd_lib_version(int* major, int* minor);
 typedef void (*hdcd_log_callback)(const void *priv, const char* fmt, va_list args);
 
 typedef struct {
+    uint32_t sid; /**< internal struct identity = HDCD_SID_LOGGER */
+
     int enable;
     void *priv;
     hdcd_log_callback log_func;
@@ -98,6 +100,8 @@ const char* hdcd_str_ana_mode(hdcd_ana_mode_t v);
 #define HDCD_FLAG_TGM_LOG_OFF       64
 
 typedef struct {
+    uint32_t sid; /**< internal struct identity = HDCD_SID_STATE */
+
     int decoder_options;  /**< as flags HDCD_FLAG_* */
 
     uint64_t window;
@@ -141,6 +145,8 @@ typedef struct {
 } hdcd_state_t;
 
 typedef struct {
+    uint32_t sid; /**< internal struct identity = HDCD_SID_STATE_STEREO */
+
     hdcd_state_t channel[2];    /**< individual channel states       */
     hdcd_ana_mode_t ana_mode;   /**< analyze mode                    */
     int val_target_gain;        /**< last valid matching target_gain */
@@ -183,6 +189,8 @@ typedef enum {
 } hdcd_pf_t;
 
 typedef struct {
+    uint32_t sid; /**< internal struct identity = HDCD_SID_DETECTION_DATA */
+
     hdcd_detection_t hdcd_detected;
     hdcd_pf_t packet_type;
     int total_packets;         /**< valid packets */
