@@ -31,8 +31,7 @@ Simple API
 
 ### Declare and initialize
 
-    hdcd_simple_t ctx;
-    ctx = shdcd_new();
+    hdcd_simple_t *ctx = shdcd_new();
 
 ### Each frame
     
