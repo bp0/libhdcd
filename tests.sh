@@ -2,9 +2,15 @@
 
 # Run tests on the HDCD decoder library, against previous results
 
-HDCD_DETECT="./hdcd-detect"
 TMP="/tmp"
 #TMP="/run/shm"
+
+HDCD_DETECT="./hdcd-detect"
+MD5SUM=$(which md5sum)
+if [ -z "$MD5SUM" ]; then
+    echo "Requires md5sum"
+    exit 1;
+fi
 
 EXIT_CODE=0
 
@@ -29,7 +35,7 @@ do_test() {
         echo "-- FAILED [exit_code]"
         EXIT_CODE=1
     else
-        md5sum "$TOUT" >"$TOUT.md5"
+        "$MD5SUM" "$TOUT" >"$TOUT.md5"
         sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5"
         echo "$THASH" >"$TOUT.md5.target"
         RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
