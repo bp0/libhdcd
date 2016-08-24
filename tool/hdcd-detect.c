@@ -55,8 +55,10 @@ static void usage(const char* name) {
         "    -a <mode>\t analyze modes:\n");
     for(i = 0; i < 7; i++)
         fprintf(stderr,
-        "      \t\t %s\t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
-    fprintf(stderr, "\n");
+        "      \t\t     %s\t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
+    fprintf(stderr,
+        "    -p\t\t output raw pcm samples only without any wav header\n"
+        "\n");
 }
 
 typedef struct {
@@ -64,6 +66,8 @@ typedef struct {
     uint32_t size;
     int16_t bits_per_sample;
     int16_t bytes_per_sample;
+
+    int raw_pcm_only;
 
     int length_loc;
     int data_size_loc;
@@ -96,7 +100,7 @@ static int fwrite_int32el(int32_t v, FILE *fp) {
     return fwrite(&b, 1, 4, fp);
 }
 
-static wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
+static wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int raw) {
     int16_t channels = 2;
     int32_t sample_rate = 44100;
 
@@ -107,6 +111,7 @@ static wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
 
     wavw_t* wav = malloc(sizeof(wavw_t));
     if (!wav) return NULL;
+    memset(wav, 0, sizeof(*wav));
 
     FILE *fp;
     if (strcmp(file_name, "-") == 0)
@@ -117,22 +122,27 @@ static wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample) {
         free(wav);
         return NULL;
     }
-    fwrite("RIFF", 1, 4, fp);
-    wav->length_loc = ftell(fp);
-    fwrite_int32el(length, fp);
-    fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, fp);
-    fwrite_int16el(channels, fp);
-    fwrite_int32el(sample_rate, fp);
-    fwrite_int32el(bytes_per_second, fp);
-    fwrite_int16el(bytes_per_sample, fp);
-    fwrite_int16el(bits_per_sample, fp);
-    fwrite("data", 1, 4, fp);
-    wav->data_size_loc = ftell(fp);
-    fwrite_int32el(size, fp);
+
+    if (!raw) {
+        fwrite("RIFF", 1, 4, fp);
+        wav->length_loc = ftell(fp);
+        fwrite_int32el(length, fp);
+        fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, fp);
+        fwrite_int16el(channels, fp);
+        fwrite_int32el(sample_rate, fp);
+        fwrite_int32el(bytes_per_second, fp);
+        fwrite_int16el(bytes_per_sample, fp);
+        fwrite_int16el(bits_per_sample, fp);
+        fwrite("data", 1, 4, fp);
+        wav->data_size_loc = ftell(fp);
+        fwrite_int32el(size, fp);
+        wav->raw_pcm_only = raw;
+    }
     wav->fp = fp;
     wav->size = size;
     wav->bits_per_sample = bits_per_sample;
     wav->bytes_per_sample = bytes_per_sample;
+    wav->raw_pcm_only = raw;
     return wav;
 }
 
@@ -154,10 +164,12 @@ static int wav_write(wavw_t *wav, const int32_t *samples, int count) {
 static void wav_write_close(wavw_t *wav) {
     if (!wav) return;
     if (wav->fp) {
-        if ( fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
-            fwrite_int32el(wav->size + 44 - 8 , wav->fp);
-        if ( fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
-            fwrite_int32el(wav->size, wav->fp);
+        if (!wav->raw_pcm_only) {
+            if (wav->length_loc && fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
+                fwrite_int32el(wav->size + 44 - 8 , wav->fp);
+            if (wav->data_size_loc && fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
+                fwrite_int32el(wav->size, wav->fp);
+        }
         fclose(wav->fp);
     }
     free(wav);
@@ -179,20 +191,24 @@ int main(int argc, char *argv[]) {
     int i, c, read, count, full_count = 0, ver_match;
 
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
+    int opt_raw_out = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "xfqa:")) != -1) {
+    while ((c = getopt(argc, argv, "a:fpqx")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
                 break;
-            case 'f':
-                opt_force = 1;
-                break;
             case 'q':
                 opt_quiet = 1;
+                break;
+            case 'p':
+                opt_raw_out = 1;
+                break;
+            case 'f':
+                opt_force = 1;
                 break;
             case 'a':
                 if (strcmp(optarg, "off") == 0)
@@ -271,7 +287,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
             return 1;
         } else {
-            wav_out = wav_write_open(outfile, 24);
+            wav_out = wav_write_open(outfile, 24, opt_raw_out);
             if (!wav_out) return 1;
         }
     }
