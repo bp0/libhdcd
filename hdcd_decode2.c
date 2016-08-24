@@ -839,6 +839,9 @@ enum {
 
 static void hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
     vfprintf(stderr, fmt, args);
+    /* fix for -Wunused-parameter: The callback requires
+     * the parameter, but it is not used here.  */
+    ignored = ignored;
 }
 
 int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv) {
@@ -1039,6 +1042,10 @@ static int hdcd_integrate(hdcd_state_t *state, int *flag, const int32_t *samples
                 state->code_counterC_unmatched++;
                 hdcd_log(state->log,
                     "hdcd error: Unmatched code: 0x%08x near %d\n", bits, state->sample_count);
+            case HDCD_CODE_EXPECT_A:
+            case HDCD_CODE_EXPECT_B:
+                /* not used here, but fix -Wswitch */
+                break;
         }
         if (*flag) hdcd_update_info(state);
         state->arg = 0;
@@ -1103,6 +1110,10 @@ static int hdcd_integrate_stereo(hdcd_state_stereo_t *state, int *flag, const in
                         state->channel[i].code_counterC_unmatched++;
                         hdcd_log(state->channel[i].log,
                             "hdcd error: Unmatched code: 0x%08x near %d\n", wbits, state->channel[i].sample_count);
+                    case HDCD_CODE_EXPECT_A:
+                    case HDCD_CODE_EXPECT_B:
+                        /* not used here, but fix -Wswitch */
+                        break;
                 }
                 if (*flag&(i+1)) hdcd_update_info(&state->channel[i]);
                 state->channel[i].arg = 0;
@@ -1139,7 +1150,7 @@ static int hdcd_scan(hdcd_state_t *state, const int32_t *samples, int max, int s
     /* code detect timer */
     if (state->sustain > 0) {
         cdt_active = 1;
-        if (state->sustain <= max) {
+        if (state->sustain <= (unsigned)max) {
             state->control = 0;
             max = state->sustain;
         }
@@ -1175,7 +1186,7 @@ static int hdcd_scan_stereo(hdcd_state_stereo_t *state, const int32_t *samples, 
     for(i=0; i<2; i++) {
         if (state->channel[i].sustain > 0) {
             cdt_active[i] = 1;
-            if (state->channel[i].sustain <= max) {
+            if (state->channel[i].sustain <=  (unsigned)max) {
                 state->channel[i].control = 0;
                 max = state->channel[i].sustain;
             }
@@ -1301,7 +1312,7 @@ static int hdcd_envelope(int32_t *samples, int count, int stride, int gain, int 
             int32_t sample = samples[i * stride];
             int32_t asample = abs(sample) - PEAK_EXT_LEVEL;
             if (asample >= 0) {
-                if (asample >= sizeof(peaktab) ) asample = sizeof(peaktab) - 1;
+                if ((uint32_t)asample >= sizeof(peaktab) ) asample = sizeof(peaktab) - 1;
                 sample = sample >= 0 ? peaktab[asample] : -peaktab[asample];
             } else
                 sample <<= 15;

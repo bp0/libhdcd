@@ -84,9 +84,11 @@ void shdcd_detect_str(hdcd_simple_t *s, char *str, int maxlen)
 
 int shdcd_attach_logger(hdcd_simple_t *s, hdcd_log_callback func, void *priv)
 {
-    if (!s) return -1;
+    if (!s) return 0;
+    if (!func) return 0;
     hdcd_log_init_ext(&s->logger, func, priv);
     hdcd_attach_logger_stereo(&s->state, &s->logger);
+    return 1;
 }
 
 void shdcd_default_logger(hdcd_simple_t *s)

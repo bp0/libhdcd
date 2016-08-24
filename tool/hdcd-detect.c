@@ -121,7 +121,7 @@ static int wav_write(wavw_t *wav, const int32_t *samples, int count) {
     int i;
     size_t elw = 0;
 
-    if (!wav) return 1;
+    if (!wav) return 0;
     for (i = 0; i < count; i++)
         if (wav->bits_per_sample == 24)
             elw += fwrite_int24el(samples[i], wav->fp);
@@ -129,14 +129,18 @@ static int wav_write(wavw_t *wav, const int32_t *samples, int count) {
             elw += fwrite_int32el(samples[i], wav->fp);
 
     wav->size += elw;
+    return elw;
 }
 
-static int wav_write_close(wavw_t *wav) {
-    if ( fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
-        fwrite_int32el(wav->size + 44 - 8 , wav->fp);
-    if ( fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
-        fwrite_int32el(wav->size, wav->fp);
-    fclose(wav->fp);
+static void wav_write_close(wavw_t *wav) {
+    if (!wav) return;
+    if (wav->fp) {
+        if ( fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
+            fwrite_int32el(wav->size + 44 - 8 , wav->fp);
+        if ( fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
+            fwrite_int32el(wav->size, wav->fp);
+        fclose(wav->fp);
+    }
     free(wav);
 }
 
@@ -144,7 +148,7 @@ int main(int argc, char *argv[]) {
     const char *infile;
     const char *outfile = NULL;
     void *wav;
-    wavw_t *wav_out;
+    wavw_t *wav_out = NULL;
 
     int format, sample_rate, channels, bits_per_sample;
     int frame_length = 2048;
@@ -155,11 +159,6 @@ int main(int argc, char *argv[]) {
     int32_t* process_buf;
     int i, read, count, full_count = 0;
 
-    /*
-    hdcd_detection_data_t detect;
-    hdcd_state_stereo_t state_stereo;
-    hdcd_log_t logger;
-    */
     hdcd_simple_t *ctx;
     char dstr[256];
 
@@ -253,4 +252,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
