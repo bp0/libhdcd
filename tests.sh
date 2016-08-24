@@ -85,6 +85,7 @@ do_test "-qx" "ava16"     "a44fea1a2c825ed24f57f35a328d7874" 1
 
 # analyzer tests
 do_test "-qx -a pe"     "hdcd-all"  "769ce35ba609d6cf90f525db3be6cc92" 0 "analyzer-pe"
+do_test "-qxp -a pe"    "hdcd"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
 do_test "-qx -a lle"    "hdcd-all"  "cbec0b7d20475c4c0b0e341e3b354bd4" 0 "analyzer-lle"
 do_test "-qx -a cdt"    "hdcd-all"  "3a3410e9a0646ea9a25e9ac2124cbeea" 0 "analyzer-cdt"
 do_test "-qx -a tgm"    "hdcd-tgm"  "45df3641d1023fed4621c4ae6ee45800" 0 "analyzer-tgm"
