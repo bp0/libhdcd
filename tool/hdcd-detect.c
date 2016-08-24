@@ -34,7 +34,7 @@ static void usage(const char* name) {
         "%s [options] in.wav [out.wav]\n", name);
     fprintf(stderr,
         "    in.wav must be a s16, stereo, 44100Hz wav file\n"
-        "    out.wav will be s24; will not prompt for overwrite\n"
+        "    out.wav will be s24\n"
         "\n" );
     fprintf(stderr, "Alternate usage:\n %s [options] - [-] <in.wav [>out.wav]\n", name);
     fprintf(stderr,
@@ -43,6 +43,8 @@ static void usage(const char* name) {
         "    but will otherwise work.\n"
         "\n" );
     fprintf(stderr, "Options:\n"
+        "    -q\t\t quiet\n"
+        "    -f\t\t force overwrite\n"
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
         "      \t\t was _NOT_ detected.\n");
 
@@ -165,39 +167,48 @@ int main(int argc, char *argv[]) {
     uint8_t* input_buf;
     int16_t* convert_buf;
     int32_t* process_buf;
-    int i, c, read, count, full_count = 0;
+    int i, c, read, count, full_count = 0, ver_match;
 
-    int xmode = 0;
+    int xmode = 0, opt_force = 0, opt_quiet = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    int ver_match = hdcd_lib_version(&lv_major, &lv_minor);
-
-    fprintf(stderr, "HDCD detect/decode tool\n");
-    fprintf(stderr, "libhdcd version: %d.%d\n\n", lv_major, lv_minor);
-
-    if (!ver_match) {
-        fprintf(stderr, "Version mismatch. Built against: %d.%d\n",
-            HDCD_DECODE2_VER_MAJOR, HDCD_DECODE2_VER_MINOR);
-        if (lv_major != HDCD_DECODE2_VER_MAJOR) {
-            fprintf(stderr, "...exiting.\n");
-            return 1;
-        }
-    }
-
-    while ((c = getopt(argc, argv, "x")) != -1) {
+    while ((c = getopt(argc, argv, "xfq")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
+                break;
+            case 'f':
+                opt_force = 1;
+                break;
+            case 'q':
+                opt_quiet = 1;
                 break;
             default:
                 usage(argv[0]);
                 return 1;
         }
     }
+
+    ver_match = hdcd_lib_version(&lv_major, &lv_minor);
+
+    if (!opt_quiet) fprintf(stderr, "HDCD detect/decode tool\n");
+    if (!opt_quiet) fprintf(stderr, "libhdcd version: %d.%d\n\n", lv_major, lv_minor);
+
+    if (!ver_match) {
+        if (!opt_quiet)
+            fprintf(stderr, "Version mismatch. Built against: %d.%d\n",
+                HDCD_DECODE2_VER_MAJOR, HDCD_DECODE2_VER_MINOR);
+        if (lv_major != HDCD_DECODE2_VER_MAJOR) {
+            if (!opt_quiet)
+                fprintf(stderr, "...exiting.\n");
+            return 1;
+        }
+    }
+
     if (argc - optind < 1) {
-        usage(argv[0]);
+        if (!opt_quiet) usage(argv[0]);
         return 1;
     }
     infile = argv[optind];
@@ -205,33 +216,38 @@ int main(int argc, char *argv[]) {
 
     wav = wav_read_open(infile);
     if (!wav) {
-        fprintf(stderr, "Unable to open wav file %s\n", infile);
+        if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
         return 1;
     }
     if (!wav_get_header(wav, &format, &channels, &sample_rate, &bits_per_sample, NULL)) {
-        fprintf(stderr, "Bad wav file %s\n", infile);
+        if (!opt_quiet) fprintf(stderr, "Bad wav file %s\n", infile);
         return 1;
     }
     if (format != 1) {
-        fprintf(stderr, "Unsupported WAV format %d\n", format);
+        if (!opt_quiet) fprintf(stderr, "Unsupported WAV format %d\n", format);
         return 1;
     }
     if (bits_per_sample != 16) {
-        fprintf(stderr, "Unsupported WAV sample depth %d\n", bits_per_sample);
+        if (!opt_quiet) fprintf(stderr, "Unsupported WAV sample depth %d\n", bits_per_sample);
         return 1;
     }
     if (channels != 2) {
-        fprintf(stderr, "Unsupported WAV channels %d\n", channels);
+        if (!opt_quiet) fprintf(stderr, "Unsupported WAV channels %d\n", channels);
         return 1;
     }
 
     if (outfile) {
-        wav_out = wav_write_open(outfile, 24);
-        if (!wav_out) return 1;
+        if( !opt_force && strcmp(outfile, "-") != 0 && access( outfile, F_OK ) != -1 ) {
+            if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
+            return 1;
+        } else {
+            wav_out = wav_write_open(outfile, 24);
+            if (!wav_out) return 1;
+        }
     }
 
     ctx = shdcd_new();
-    shdcd_default_logger(ctx);
+    if (!opt_quiet) shdcd_default_logger(ctx);
 
     set_size = channels * (bits_per_sample>>3);
     input_size = set_size * frame_length;
@@ -261,8 +277,8 @@ int main(int argc, char *argv[]) {
     shdcd_detect_str(ctx, dstr, sizeof(dstr));
     if (xmode) xmode = !shdcd_detected(ctx); /* return zero if (-x) mode and HDCD not detected */
 
-    fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
-    fprintf(stderr, "%s\n", dstr);
+    if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
+    if (!opt_quiet) fprintf(stderr, "%s\n", dstr);
 
     free(input_buf);
     free(convert_buf);
