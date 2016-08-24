@@ -34,7 +34,18 @@ struct hdcd_simple_t {
     hdcd_state_stereo_t state;
     hdcd_detection_data_t detect;
     hdcd_log_t logger;
+    int smode;
 };
+
+/** set stereo processing mode, only used internally */
+static void shdcd_smode(hdcd_simple_t *s, int mode)
+{
+    if (!s) return;
+    if (mode != 0 && mode != 1) return;
+    /* TODO: this needs to be more careful when switching in
+     * the middle of processing */
+    s->smode = mode;
+}
 
 /** create a new hdcd_simple context */
 hdcd_simple_t *shdcd_new(void)
@@ -52,13 +63,22 @@ void shdcd_reset(hdcd_simple_t *s)
 {
     if (!s) return;
     hdcd_reset_stereo_ext(&s->state, 44100, 2000, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
+    shdcd_smode(s, 1);
+    shdcd_analyze_mode(s, 0);
 }
 
 /** process signed 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz */
 void shdcd_process(hdcd_simple_t *s, int *samples, int count)
 {
     if (!s) return;
-    hdcd_process_stereo(&s->state, samples, count);
+    if (s->smode)
+        /* process stereo channels together */
+        hdcd_process_stereo(&s->state, samples, count);
+    else {
+        /* independently process each channel */
+        hdcd_process(&s->state.channel[0], samples, count, 2);
+        hdcd_process(&s->state.channel[1], samples + 1, count, 2);
+    }
     hdcd_detect_stereo(&s->state, &s->detect);
 }
 
@@ -98,10 +118,60 @@ void shdcd_default_logger(hdcd_simple_t *s)
     hdcd_attach_logger_stereo(&s->state, &s->logger);
 }
 
-void shdcd_detach_logger(hdcd_simple_t *s) {
+void shdcd_detach_logger(hdcd_simple_t *s)
+{
     if (!s) return;
     /* just reset to the default and then disable */
     hdcd_log_init_ext(&s->logger, NULL, NULL);
     hdcd_attach_logger_stereo(&s->state, &s->logger);
     hdcd_log_disable(&s->logger);
+}
+
+int shdcd_analyze_mode(hdcd_simple_t *s, int mode)
+{
+    if (!s) return 0;
+
+    /* clear HDCD_FLAG_FORCE_PE for all, and set it
+     * in the one mode that will use it  */
+    s->state.channel[0].decoder_options &= ~HDCD_FLAG_FORCE_PE;
+    s->state.channel[1].decoder_options &= ~HDCD_FLAG_FORCE_PE;
+
+    switch(mode) {
+        case SHDCD_ANA_OFF:     /* identical to HDCD_ANA_OFF */
+        case SHDCD_ANA_LLE:     /* identical to HDCD_ANA_LLE */
+        case SHDCD_ANA_PE:      /* identical to HDCD_ANA_PE  */
+        case SHDCD_ANA_CDT:     /* identical to HDCD_ANA_CDT */
+        case SHDCD_ANA_TGM:     /* identical to HDCD_ANA_TGM */
+            shdcd_smode(s, 1);
+            hdcd_set_analyze_mode_stereo(&s->state, mode);
+            return 1;
+        case SHDCD_ANA_PEL:     /* HDCD_ANA_PE + HDCD_FLAG_FORCE_PE */
+            shdcd_smode(s, 1);
+            s->state.channel[0].decoder_options |= HDCD_FLAG_FORCE_PE;
+            s->state.channel[1].decoder_options |= HDCD_FLAG_FORCE_PE;
+            hdcd_set_analyze_mode_stereo(&s->state, HDCD_ANA_PE);
+            return 1;
+        case SHDCD_ANA_LTGM: /* HDCD_ANA_LLE + stereo_mode off */
+            shdcd_smode(s, 0);
+            hdcd_set_analyze_mode_stereo(&s->state, HDCD_ANA_LLE);
+            return 1;
+    }
+    return 0;
+}
+
+#define SHDCD_ANA_PEL_DESC "any samples above peak extend level"
+#define SHDCD_ANA_LTGM_DESC "gain adjustment level at each sample, in each channel"
+const char* shdcd_analyze_mode_desc(int mode)
+{
+    static const char * const ana_mode_str[] = {
+        HDCD_ANA_OFF_DESC,
+        HDCD_ANA_LLE_DESC,
+        HDCD_ANA_PE_DESC,
+        HDCD_ANA_CDT_DESC,
+        HDCD_ANA_TGM_DESC,
+        SHDCD_ANA_PEL_DESC,
+        SHDCD_ANA_LTGM_DESC,
+    };
+    if (mode < 0 || mode > 6) return "???";
+    return ana_mode_str[mode];
 }

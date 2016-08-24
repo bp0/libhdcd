@@ -60,6 +60,26 @@ void shdcd_default_logger(hdcd_simple_t *ctx);
 void shdcd_detach_logger(hdcd_simple_t *ctx);
 
 
+/** Analyze mode(s)
+ *
+ *   In analyze mode, the audio is replaced by a solid tone, and
+ *   amplitude is changed to signal when the specified feature is
+ *   used, or some decoding state exists.
+ * 0-4 match the HDCD_ANA_* values
+ * 5,6 are additional modes that are required because direct acces to
+ *     the internal state is not available in the simple API. */
+typedef enum {
+    SHDCD_ANA_OFF     = 0, /**< disabled */
+    SHDCD_ANA_LLE     = 1, /**< LLE matching level at each sample */
+    SHDCD_ANA_PE      = 2, /**< samples where PE occurs */
+    SHDCD_ANA_CDT     = 3, /**< samples where the code detect timer is active */
+    SHDCD_ANA_TGM     = 4, /**< samples where target_gain is not matching in each channel */
+    SHDCD_ANA_PEL     = 5, /**< any samples above PE level */
+    SHDCD_ANA_LTGM    = 6, /**< LLE level in each channel at each sample */
+} shdcd_ana_mode_t;
+int shdcd_analyze_mode(hdcd_simple_t *ctx, int mode);
+const char* shdcd_analyze_mode_desc(int mode);
+
 #ifdef __cplusplus
 }
 #endif

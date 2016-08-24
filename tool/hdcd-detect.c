@@ -29,25 +29,34 @@
 int lv_major = HDCD_DECODE2_VER_MAJOR;
 int lv_minor = HDCD_DECODE2_VER_MINOR;
 
+static const char* amode_name[] = {
+  "off", "lle", "pe", "cdt", "tgm", "pel", "ltgm"
+};
+
 static void usage(const char* name) {
+    int i;
     fprintf(stderr, "Usage:\n"
         "%s [options] in.wav [out.wav]\n", name);
     fprintf(stderr,
         "    in.wav must be a s16, stereo, 44100Hz wav file\n"
-        "    out.wav will be s24\n"
+        "    out.wav will be s24, stereo, 44100Hz\n"
         "\n" );
     fprintf(stderr, "Alternate usage:\n %s [options] - [-] <in.wav [>out.wav]\n", name);
     fprintf(stderr,
         "    When using stdout with a pipe (non-seekable),\n"
         "    the wav header will not have a correct 'size',\n"
-        "    but will otherwise work.\n"
+        "    but will otherwise work\n"
         "\n" );
     fprintf(stderr, "Options:\n"
         "    -q\t\t quiet\n"
         "    -f\t\t force overwrite\n"
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
-        "      \t\t was _NOT_ detected.\n");
-
+        "      \t\t was _NOT_ detected\n"
+        "    -a <mode>\t analyze modes:\n");
+    for(i = 0; i < 7; i++)
+        fprintf(stderr,
+        "      \t\t %s\t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
+    fprintf(stderr, "\n");
 }
 
 typedef struct {
@@ -169,12 +178,12 @@ int main(int argc, char *argv[]) {
     int32_t* process_buf;
     int i, c, read, count, full_count = 0, ver_match;
 
-    int xmode = 0, opt_force = 0, opt_quiet = 0;
+    int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "xfq")) != -1) {
+    while ((c = getopt(argc, argv, "xfqa:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -184,6 +193,27 @@ int main(int argc, char *argv[]) {
                 break;
             case 'q':
                 opt_quiet = 1;
+                break;
+            case 'a':
+                if (strcmp(optarg, "off") == 0)
+                    amode = SHDCD_ANA_OFF;
+                else if (strcmp(optarg, "lle") == 0)
+                    amode = SHDCD_ANA_LLE;
+                else if (strcmp(optarg, "pe") == 0)
+                    amode = SHDCD_ANA_PE;
+                else if (strcmp(optarg, "cdt") == 0)
+                    amode = SHDCD_ANA_CDT;
+                else if (strcmp(optarg, "tgm") == 0)
+                    amode = SHDCD_ANA_TGM;
+                else if (strcmp(optarg, "pel") == 0)
+                    amode = SHDCD_ANA_PEL;
+                else if (strcmp(optarg, "ltgm") == 0)
+                    amode = SHDCD_ANA_LTGM;
+                else
+                    amode = atoi(optarg);
+
+                if (amode < 0 || amode > 6 )
+                    amode = -1;
                 break;
             default:
                 usage(argv[0]);
@@ -246,8 +276,24 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if (amode == -1) {
+        if (!opt_quiet) fprintf(stderr, "Unknown analyze mode\n");
+        return 1;
+    }
+
     ctx = shdcd_new();
     if (!opt_quiet) shdcd_default_logger(ctx);
+    if (amode) {
+        if (!outfile) {
+            if (!opt_quiet) fprintf(stderr, "Without an output file, analyze mode does nothing\n");
+            return 1;
+        }
+        if (!opt_quiet) fprintf(stderr, "Analyze mode [%s]: %s\n", amode_name[amode], shdcd_analyze_mode_desc(amode) );
+        if (!shdcd_analyze_mode(ctx, amode)) {
+            if (!opt_quiet) fprintf(stderr, "Failed to set mode for analyze\n");
+            return 1;
+        }
+    }
 
     set_size = channels * (bits_per_sample>>3);
     input_size = set_size * frame_length;
