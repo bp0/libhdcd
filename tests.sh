@@ -29,14 +29,14 @@ do_test() {
     TTIT="$5"
     if [ -z "$TTIT" ]; then TTIT="$2"; fi
     echo "$TTIT:"
-    "$HDCD_DETECT" $TOPT "$TFILE" "$TOUT"
+    "$HDCD_DETECT" $TOPT -o "$TOUT" "$TFILE"
     HDEX=$?
     if ((HDEX != TEXI)); then
         echo "hdcd-detect returned unexpected exit code: $HDEX (wanted: $TEXI)"
         echo "   bin = $HDCD_DETECT"
         echo "   opt = $TOPT"
-        echo "   tfile = $TFILE"
-        echo "   temp = $TOUT"
+        echo "   -o = $TOUT"
+        echo "   test_file = $TFILE"
         echo "-- FAILED [exit_code]"
         EXIT_CODE=1
         die_on_fail
@@ -84,15 +84,15 @@ do_test "-qx" "hdcd-tgm"  "f3cf4d7fbe2ffbab53a3698730c140d1" 0
 do_test "-qx" "ava16"     "a44fea1a2c825ed24f57f35a328d7874" 1
 
 # analyzer tests
-do_test "-qx -a pe"     "hdcd-all"  "769ce35ba609d6cf90f525db3be6cc92" 0 "analyzer-pe"
-do_test "-qxp -a pe"    "hdcd"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
-do_test "-qx -a lle"    "hdcd-all"  "cbec0b7d20475c4c0b0e341e3b354bd4" 0 "analyzer-lle"
-do_test "-qx -a cdt"    "hdcd-all"  "3a3410e9a0646ea9a25e9ac2124cbeea" 0 "analyzer-cdt"
-do_test "-qx -a tgm"    "hdcd-tgm"  "45df3641d1023fed4621c4ae6ee45800" 0 "analyzer-tgm"
-do_test "-qx -a pel"    "ava16"     "74bb1f47db2bcf0c35d38437f147ab8f" 1 "analyzer-pel"
-do_test "-qx -a tgm"    "hdcd-ftm"  "d4559c4149cb6629ea7a5cde775e380e" 0 "analyzer-tgm-for-the-masses"
-do_test "-qx -a ltgm"   "hdcd-ftm"  "7656237a5f8171d58113b5fe5b718738" 0 "analyzer-lgtm-for-the-masses"
-do_test "-qx -a ltgm"   "ava16"     "5479204e34eeedf714122c314f779c83" 1 "analyzer-lgtm-nch-process-false-positive"
-do_test "-qx -a cdt"    "ava16"     "d54f7e54623b6bfbe78d127e69fefe6e" 1 "analyzer-cdt-nch-process-false-positive"
+do_test "-qx -z pe"     "hdcd-all"  "769ce35ba609d6cf90f525db3be6cc92" 0 "analyzer-pe"
+do_test "-qxp -z pe"    "hdcd"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
+do_test "-qx -z lle"    "hdcd-all"  "cbec0b7d20475c4c0b0e341e3b354bd4" 0 "analyzer-lle"
+do_test "-qx -z cdt"    "hdcd-all"  "3a3410e9a0646ea9a25e9ac2124cbeea" 0 "analyzer-cdt"
+do_test "-qx -z tgm"    "hdcd-tgm"  "45df3641d1023fed4621c4ae6ee45800" 0 "analyzer-tgm"
+do_test "-qx -z pel"    "ava16"     "74bb1f47db2bcf0c35d38437f147ab8f" 1 "analyzer-pel"
+do_test "-qx -z tgm"    "hdcd-ftm"  "d4559c4149cb6629ea7a5cde775e380e" 0 "analyzer-tgm-for-the-masses"
+do_test "-qx -z ltgm"   "hdcd-ftm"  "7656237a5f8171d58113b5fe5b718738" 0 "analyzer-lgtm-for-the-masses"
+do_test "-qx -z ltgm"   "ava16"     "5479204e34eeedf714122c314f779c83" 1 "analyzer-lgtm-nch-process-false-positive"
+do_test "-qx -z cdt"    "ava16"     "d54f7e54623b6bfbe78d127e69fefe6e" 1 "analyzer-cdt-nch-process-false-positive"
 
 exit $EXIT_CODE

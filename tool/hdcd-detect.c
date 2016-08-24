@@ -36,14 +36,14 @@ static const char* amode_name[] = {
 static void usage(const char* name) {
     int i;
     fprintf(stderr, "Usage:\n"
-        "%s [options] in.wav [out.wav]\n", name);
+        "%s [options] [-o out.wav] in.wav\n", name);
     fprintf(stderr,
         "    in.wav must be a s16, stereo, 44100Hz wav file\n"
         "    out.wav will be s24, stereo, 44100Hz\n"
         "\n" );
-    fprintf(stderr, "Alternate usage:\n %s [options] - [-] <in.wav [>out.wav]\n", name);
+    fprintf(stderr, "Alternate usage:\n %s [options] -c - <in.wav >out.wav\n", name);
     fprintf(stderr,
-        "    When using stdout with a pipe (non-seekable),\n"
+        "    When using -c with a pipe (non-seekable),\n"
         "    the wav header will not have a correct 'size',\n"
         "    but will otherwise work\n"
         "\n" );
@@ -54,7 +54,9 @@ static void usage(const char* name) {
         "    -f\t\t force overwrite\n"
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
         "      \t\t was _NOT_ detected\n"
-        "    -a <mode>\t analyze modes:\n");
+        "    -o\t\t output file to write\n"
+        "    -c\t\t output to stdout\n"
+        "    -z <mode>\t analyze modes:\n");
     for(i = 0; i <= 6; i++)
         fprintf(stderr,
         "      \t\t     %s  \t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
@@ -199,7 +201,7 @@ int main(int argc, char *argv[]) {
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "a:fhpqvx")) != -1) {
+    while ((c = getopt(argc, argv, "cfho:pqvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -214,13 +216,19 @@ int main(int argc, char *argv[]) {
             case 'p':
                 opt_raw_out = 1;
                 break;
+            case 'o':
+                outfile = optarg;
+                break;
             case 'h':
                 opt_help = 1;
                 break;
             case 'f':
                 opt_force = 1;
                 break;
-            case 'a':
+            case 'c':
+                outfile = "-";
+                break;
+            case 'z':
                 if (strcmp(optarg, "off") == 0)
                     amode = SHDCD_ANA_OFF;
                 else if (strcmp(optarg, "lle") == 0)
@@ -273,7 +281,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     infile = argv[optind];
-    if (argc - optind >= 2) outfile = argv[optind + 1];
 
     wav = wav_read_open(infile);
     if (!wav) {
