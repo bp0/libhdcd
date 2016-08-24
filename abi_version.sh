@@ -26,9 +26,9 @@ if [ ! -f $HEADER_FILE ]; then
     exit 1
 fi
 
-CURRENT=`egrep '^#define +HDCD_DECODE2_VER_MAJOR +[0-9]+$' $HEADER_FILE`
-REVISION=`egrep '^#define +HDCD_DECODE2_VER_MINOR +[0-9]+$' $HEADER_FILE`
-AGE=`egrep '^#define +HDCD_DECODE2_VER_MICRO +[0-9]+$' $HEADER_FILE`
+CURRENT=`egrep '^#define +HDCDLIB_VER_MAJOR +[0-9]+' $HEADER_FILE`
+REVISION=`egrep '^#define +HDCDLIB_VER_MINOR +[0-9]+' $HEADER_FILE`
+AGE=`egrep '^#define +HDCDLIB_VER_AGE +[0-9]+' $HEADER_FILE`
 
 if [ -z "$CURRENT" -o -z "$REVISION" -o -z "$AGE" ]; then
     echo "abi_version.sh: error: could not extract version from $HEADER_FILE" 1>&2

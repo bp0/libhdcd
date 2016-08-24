@@ -30,9 +30,9 @@
 
 int hdcd_lib_version(int* major, int* minor) {
     int match = 0;
-    if (*major == HDCD_DECODE2_VER_MAJOR && *minor == HDCD_DECODE2_VER_MINOR)
+    if (*major == HDCDLIB_VER_MAJOR && *minor == HDCDLIB_VER_MINOR)
         match = 1;
-    *major = HDCD_DECODE2_VER_MAJOR;
-    *minor = HDCD_DECODE2_VER_MINOR;
+    *major = HDCDLIB_VER_MAJOR;
+    *minor = HDCDLIB_VER_MINOR;
     return match;
 }

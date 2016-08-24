@@ -32,12 +32,16 @@
 extern "C" {
 #endif
 
-#define HDCD_DECODE2_VER_MAJOR 2
-#define HDCD_DECODE2_VER_MINOR 1
-#define HDCD_DECODE2_VER_MICRO 0
+#define HDCDLIB_VER_MAJOR 2  /* used as libtool 'current'  */
+#define HDCDLIB_VER_MINOR 1  /* used as libtool 'revision' */
+#define HDCDLIB_VER_AGE   0  /* used as libtool 'age'      */
+/* age is the difference between the 'current' and whatever
+ * old 'current' version the library can still safely link against.
+ * https://www.gnu.org/software/libtool/manual/html_node/Libtool-versioning.html */
+
 /** fills major and minor with the version of the built library
  *
- * int major = HDCD_DECODE2_VER_MAJOR, minor = HDCD_DECODE2_VER_MINOR;
+ * int major = HDCDLIB_VER_MAJOR, minor = HDCDLIB_VER_MINOR;
  * ver_match = hdcd_lib_version(&major, &minor);
  * */
 int hdcd_lib_version(int* major, int* minor);

@@ -26,8 +26,8 @@
 #include "../hdcd_simple.h"
 #include "wavreader.h"
 
-int lv_major = HDCD_DECODE2_VER_MAJOR;
-int lv_minor = HDCD_DECODE2_VER_MINOR;
+int lv_major = HDCDLIB_VER_MAJOR;
+int lv_minor = HDCDLIB_VER_MINOR;
 
 static const char* amode_name[] = {
   "off", "lle", "pe", "cdt", "tgm", "pel", "ltgm"
@@ -229,8 +229,8 @@ int main(int argc, char *argv[]) {
     if (!ver_match) {
         if (!opt_quiet)
             fprintf(stderr, "Version mismatch. Built against: %d.%d\n",
-                HDCD_DECODE2_VER_MAJOR, HDCD_DECODE2_VER_MINOR);
-        if (lv_major != HDCD_DECODE2_VER_MAJOR) {
+                HDCDLIB_VER_MAJOR, HDCDLIB_VER_MINOR);
+        if (lv_major != HDCDLIB_VER_MAJOR) {
             if (!opt_quiet)
                 fprintf(stderr, "...exiting.\n");
             return 1;
