@@ -77,7 +77,14 @@ typedef enum {
     SHDCD_ANA_PEL     = 5, /**< any samples above PE level */
     SHDCD_ANA_LTGM    = 6, /**< LLE level in each channel at each sample */
 } shdcd_ana_mode_t;
+/* HDCD_ANA_*_DESC can be used for 0-4
+ * the two extra modes are described here: */
+#define SHDCD_ANA_PEL_DESC  "any samples above peak extend level"
+#define SHDCD_ANA_LTGM_DESC "gain adjustment level at each sample, in each channel"
+
+/** set the analyze mode */
 int shdcd_analyze_mode(hdcd_simple_t *ctx, int mode);
+/** get a nice description of what a mode does */
 const char* shdcd_analyze_mode_desc(int mode);
 
 #ifdef __cplusplus

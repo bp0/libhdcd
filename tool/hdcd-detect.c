@@ -53,9 +53,9 @@ static void usage(const char* name) {
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
         "      \t\t was _NOT_ detected\n"
         "    -a <mode>\t analyze modes:\n");
-    for(i = 0; i < 7; i++)
+    for(i = 0; i <= 6; i++)
         fprintf(stderr,
-        "      \t\t     %s\t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
+        "      \t\t     %s  \t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
     fprintf(stderr,
         "    -p\t\t output raw pcm samples only without any wav header\n"
         "\n");

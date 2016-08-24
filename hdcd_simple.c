@@ -159,8 +159,6 @@ int shdcd_analyze_mode(hdcd_simple_t *s, int mode)
     return 0;
 }
 
-#define SHDCD_ANA_PEL_DESC "any samples above peak extend level"
-#define SHDCD_ANA_LTGM_DESC "gain adjustment level at each sample, in each channel"
 const char* shdcd_analyze_mode_desc(int mode)
 {
     static const char * const ana_mode_str[] = {
