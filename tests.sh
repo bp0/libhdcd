@@ -63,7 +63,9 @@ do_test() {
 # hdcd.wav has PE only
 do_test "-qx"  "hdcd"     "835d9eca6c8e762f512806b0eeac42bd" 0 "hdcd-output-wav"
 
-# this one (hopefully) matches ffmpeg -i test/hdcd.wav -af hdcd -f s24le md5:
+# this one (hopefully) matches:
+#  1.  ffmpeg -i test/hdcd.wav -af hdcd -f s24le md5:
+#  2.  hdcd-detect -pc test/hdcd.wav |md5sum
 do_test "-qxp" "hdcd"     "5db465a58d2fd0d06ca944b883b33476" 0 "hdcd-output-pcm-only"
 
 # hdcd-all.wav has PE, LLE, and TF
