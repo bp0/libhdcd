@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "../hdcd_simple.h"
 #include "wavreader.h"
 
@@ -29,15 +30,22 @@ int lv_major = HDCD_DECODE2_VER_MAJOR;
 int lv_minor = HDCD_DECODE2_VER_MINOR;
 
 static void usage(const char* name) {
-    fprintf(stderr, "Usage:\n %s in.wav [out.wav]\n", name);
-    fprintf(stderr, "    in.wav must be a s16, stereo, 44100Hz wav file\n");
-    fprintf(stderr, "    out.wav will be s24; will not prompt for overwrite\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Alternate usage:\n %s - [-] <in.wav [>out.wav]\n", name);
+    fprintf(stderr, "Usage:\n"
+        "%s [options] in.wav [out.wav]\n", name);
+    fprintf(stderr,
+        "    in.wav must be a s16, stereo, 44100Hz wav file\n"
+        "    out.wav will be s24; will not prompt for overwrite\n"
+        "\n" );
+    fprintf(stderr, "Alternate usage:\n %s [options] - [-] <in.wav [>out.wav]\n", name);
     fprintf(stderr,
         "    When using stdout with a pipe (non-seekable),\n"
         "    the wav header will not have a correct 'size',\n"
-        "    but will otherwise work.\n");
+        "    but will otherwise work.\n"
+        "\n" );
+    fprintf(stderr, "Options:\n"
+        "    -x\t\t return non-zero exit code if HDCD encoding\n"
+        "      \t\t was _NOT_ detected.\n");
+
 }
 
 typedef struct {
@@ -157,7 +165,9 @@ int main(int argc, char *argv[]) {
     uint8_t* input_buf;
     int16_t* convert_buf;
     int32_t* process_buf;
-    int i, read, count, full_count = 0;
+    int i, c, read, count, full_count = 0;
+
+    int xmode = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
@@ -176,12 +186,22 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (argc < 2) {
+    while ((c = getopt(argc, argv, "x")) != -1) {
+        switch (c) {
+            case 'x':
+                xmode = 1;
+                break;
+            default:
+                usage(argv[0]);
+                return 1;
+        }
+    }
+    if (argc - optind < 1) {
         usage(argv[0]);
         return 1;
     }
-    infile = argv[1];
-    if (argc == 3) outfile = argv[2];
+    infile = argv[optind];
+    if (argc - optind >= 2) outfile = argv[optind + 1];
 
     wav = wav_read_open(infile);
     if (!wav) {
@@ -239,6 +259,7 @@ int main(int argc, char *argv[]) {
         if (read < input_size) break; // eof
     }
     shdcd_detect_str(ctx, dstr, sizeof(dstr));
+    if (xmode) xmode = !shdcd_detected(ctx); /* return zero if (-x) mode and HDCD not detected */
 
     fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     fprintf(stderr, "%s\n", dstr);
@@ -250,5 +271,5 @@ int main(int argc, char *argv[]) {
     shdcd_free(ctx);
     if (outfile) wav_write_close(wav_out);
 
-    return 0;
+    return xmode;
 }
