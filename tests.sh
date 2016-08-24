@@ -48,19 +48,19 @@ do_test() {
 #   do_test <options> <test_file> <md5_result> [<exit_code> [<test_title>]]
 
 # hdcd.wav has PE only
-do_test "-q" "hdcd"      "835d9eca6c8e762f512806b0eeac42bd"
+do_test "-qx" "hdcd"      "835d9eca6c8e762f512806b0eeac42bd" 0
 
 # hdcd-all.wav has PE, LLE, and TF
-do_test "-q" "hdcd-all"  "da671fe3351ffc6e156913b88911829c"
+do_test "-qx" "hdcd-all"  "da671fe3351ffc6e156913b88911829c" 0
 
 # hdcd-err.wav has encoding errors
-do_test "-q" "hdcd-err"  "fbc703becf0502e4f1c44c9af8f7db8d"
+do_test "-qx" "hdcd-err"  "fbc703becf0502e4f1c44c9af8f7db8d" 0
 
 # hdcd-ftm.wav is from For the Masses (1998), a notorious HDCD-CD.
-do_test "-q" "hdcd-ftm"  "c7b16edf2b7c36531b551f791da986f6" 0 "for-the-masses"
+do_test "-qx" "hdcd-ftm"  "c7b16edf2b7c36531b551f791da986f6" 0 "for-the-masses"
 
 # hdcd-tgm has a very short target gain mismatch
-do_test "-q" "hdcd-tgm"  "f3cf4d7fbe2ffbab53a3698730c140d1"
+do_test "-qx" "hdcd-tgm"  "f3cf4d7fbe2ffbab53a3698730c140d1" 0
 
 # ava16 is not HDCD, but has a coincidental valid HDCD packet that
 # applies -6dB in one channel for a short time if target_gain matching is
