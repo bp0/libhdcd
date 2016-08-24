@@ -48,6 +48,8 @@ static void usage(const char* name) {
         "    but will otherwise work\n"
         "\n" );
     fprintf(stderr, "Options:\n"
+        "    -h\t\t display usage information\n"
+        "    -v\t\t print version and exit\n"
         "    -q\t\t quiet\n"
         "    -f\t\t force overwrite\n"
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
@@ -191,21 +193,29 @@ int main(int argc, char *argv[]) {
     int i, c, read, count, full_count = 0, ver_match;
 
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
+    int opt_help = 0;
     int opt_raw_out = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "a:fpqx")) != -1) {
+    while ((c = getopt(argc, argv, "a:fhpqvx")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
+                break;
+            case 'v':
+                printf("libhdcd %d.%d\n", HDCDLIB_VER_MAJOR, HDCDLIB_VER_MINOR);
+                exit(0);
                 break;
             case 'q':
                 opt_quiet = 1;
                 break;
             case 'p':
                 opt_raw_out = 1;
+                break;
+            case 'h':
+                opt_help = 1;
                 break;
             case 'f':
                 opt_force = 1;
@@ -251,6 +261,11 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "...exiting.\n");
             return 1;
         }
+    }
+
+    if (opt_help) {
+        usage(argv[0]);
+        return 0;
     }
 
     if (argc - optind < 1) {
