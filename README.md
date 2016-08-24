@@ -37,6 +37,12 @@ Simple API
     
     shdcd_process(ctx, samples, count);
 
+### Song change, seek, etc.
+
+    shdcd_reset(ctx);  /* reset the decoder state */
+
+It is best to shdcd_reset() and then seek a couple seconds behind the target to let the the decoder process samples and catch the nearest packet. The samples leading up to the seek target can then be discarded.
+
 ### Cleanup
     
     shdcd_free(ctx);
