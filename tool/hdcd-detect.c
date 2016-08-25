@@ -17,6 +17,13 @@
  * -------------------------------------------------------------------
  */
 
+/** BUILD_HDCD_EXE_COMPAT set uses -k mode by default */
+#ifndef BUILD_HDCD_EXE_COMPAT
+#define BUILD_HDCD_EXE_COMPAT 0
+#else
+#define BUILD_HDCD_EXE_COMPAT 1
+#endif
+
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -25,6 +32,7 @@
 #include <unistd.h>
 #include "../hdcd_simple.h"
 #include "wavreader.h"
+#include "wavout.h"
 
 int lv_major = HDCDLIB_VER_MAJOR;
 int lv_minor = HDCDLIB_VER_MINOR;
@@ -33,23 +41,36 @@ static const char* amode_name[] = {
   "off", "lle", "pe", "cdt", "tgm", "pel", "ltgm"
 };
 
-static void usage(const char* name) {
+static void usage(const char* name, int kmode) {
     int i;
-    fprintf(stderr, "Usage:\n"
-        "%s [options] [-o out.wav] in.wav\n", name);
-    fprintf(stderr,
-        "    in.wav must be a s16, stereo, 44100Hz wav file\n"
-        "    out.wav will be s24, stereo, 44100Hz\n"
-        "\n" );
-    fprintf(stderr, "Alternate usage:\n %s [options] -c - <in.wav >out.wav\n", name);
-    fprintf(stderr,
-        "    When using -c with a pipe (non-seekable),\n"
-        "    the wav header will not have a correct 'size',\n"
-        "    but will otherwise work\n"
-        "\n" );
+    if (kmode) {
+        fprintf(stderr, "Usage:\n"
+            "%s [options] [in.wav]\n", name);
+        fprintf(stderr,
+            "    inpuit must be a s16, stereo, 44100Hz wav file\n"
+            "    output will be s24, stereo, 44100Hz\n"
+            "\n" );
+    } else {
+        fprintf(stderr, "Usage:\n"
+            "%s [options] [-o out.wav] in.wav\n", name);
+        fprintf(stderr,
+            "    in.wav must be a s16, stereo, 44100Hz wav file\n"
+            "    out.wav will be s24, stereo, 44100Hz\n"
+            "\n" );
+        fprintf(stderr, "Alternate usage:\n %s [options] -c - <in.wav >out.wav\n", name);
+        fprintf(stderr,
+            "    When using -c with a pipe (non-seekable),\n"
+            "    the wav header will not have a correct 'size',\n"
+            "    but will otherwise work\n"
+            "\n" );
+    }
     fprintf(stderr, "Options:\n"
         "    -h\t\t display usage information\n"
         "    -v\t\t print version and exit\n"
+#if (BUILD_HDCD_EXE_COMPAT == 0)
+        "    -k\t\t use interface compatible with\n"
+        "      \t\t Christoper Key's hdcd.exe\n"
+#endif
         "    -q\t\t quiet\n"
         "    -f\t\t force overwrite\n"
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
@@ -65,124 +86,12 @@ static void usage(const char* name) {
         "\n");
 }
 
-typedef struct {
-    FILE *fp;
-    uint32_t size;
-    int16_t bits_per_sample;
-    int16_t bytes_per_sample;
-
-    int raw_pcm_only;
-
-    int length_loc;
-    int data_size_loc;
-} wavw_t;
-
-static int fwrite_int16el(int16_t v, FILE *fp) {
-    const uint8_t b[2] = {
-        (uint16_t)v & 0xff,
-        (uint16_t)v >> 8,
-    };
-    return fwrite(&b, 1, 2, fp);
-}
-
-static int fwrite_int24el(int32_t v, FILE *fp) {
-    const uint8_t b[3] = {
-        ((uint32_t)v >> 8) & 0xff,
-        ((uint32_t)v >> 16) & 0xff,
-        ((uint32_t)v >> 24),
-    };
-    return fwrite(&b, 1, 3, fp);
-}
-
-static int fwrite_int32el(int32_t v, FILE *fp) {
-    const uint8_t b[4] = {
-        (uint32_t)v & 0xff,
-        ((uint32_t)v >> 8) & 0xff,
-        ((uint32_t)v >> 16) & 0xff,
-        ((uint32_t)v >> 24),
-    };
-    return fwrite(&b, 1, 4, fp);
-}
-
-static wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int raw) {
-    int16_t channels = 2;
-    int32_t sample_rate = 44100;
-
-    int32_t size = 0;
-    int32_t length = size + 44 - 8;
-    int32_t bytes_per_second = channels * sample_rate * bits_per_sample/8;
-    int16_t bytes_per_sample = channels * bits_per_sample/8;
-
-    wavw_t* wav = malloc(sizeof(wavw_t));
-    if (!wav) return NULL;
-    memset(wav, 0, sizeof(*wav));
-
-    FILE *fp;
-    if (strcmp(file_name, "-") == 0)
-        fp = stdout;
-    else
-        fp = fopen(file_name, "wb");
-    if(!fp) {
-        free(wav);
-        return NULL;
-    }
-
-    if (!raw) {
-        fwrite("RIFF", 1, 4, fp);
-        wav->length_loc = ftell(fp);
-        fwrite_int32el(length, fp);
-        fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, fp);
-        fwrite_int16el(channels, fp);
-        fwrite_int32el(sample_rate, fp);
-        fwrite_int32el(bytes_per_second, fp);
-        fwrite_int16el(bytes_per_sample, fp);
-        fwrite_int16el(bits_per_sample, fp);
-        fwrite("data", 1, 4, fp);
-        wav->data_size_loc = ftell(fp);
-        fwrite_int32el(size, fp);
-        wav->raw_pcm_only = raw;
-    }
-    wav->fp = fp;
-    wav->size = size;
-    wav->bits_per_sample = bits_per_sample;
-    wav->bytes_per_sample = bytes_per_sample;
-    wav->raw_pcm_only = raw;
-    return wav;
-}
-
-static int wav_write(wavw_t *wav, const int32_t *samples, int count) {
-    int i;
-    size_t elw = 0;
-
-    if (!wav) return 0;
-    for (i = 0; i < count; i++)
-        if (wav->bits_per_sample == 24)
-            elw += fwrite_int24el(samples[i], wav->fp);
-        else if (wav->bits_per_sample == 32)
-            elw += fwrite_int32el(samples[i], wav->fp);
-
-    wav->size += elw;
-    return elw;
-}
-
-static void wav_write_close(wavw_t *wav) {
-    if (!wav) return;
-    if (wav->fp) {
-        if (!wav->raw_pcm_only) {
-            if (wav->length_loc && fseek(wav->fp, wav->length_loc, SEEK_SET) == 0)
-                fwrite_int32el(wav->size + 44 - 8 , wav->fp);
-            if (wav->data_size_loc && fseek(wav->fp, wav->data_size_loc, SEEK_SET) == 0)
-                fwrite_int32el(wav->size, wav->fp);
-        }
-        fclose(wav->fp);
-    }
-    free(wav);
-}
-
 int main(int argc, char *argv[]) {
-    const char *infile;
+    const char *infile = NULL;
     const char *outfile = NULL;
-    void *wav;
+    const char dashfile[] = "-";
+    void *wav = NULL;
+    FILE *fp_raw_in = NULL;
     wavw_t *wav_out = NULL;
 
     int format, sample_rate, channels, bits_per_sample;
@@ -195,13 +104,15 @@ int main(int argc, char *argv[]) {
     int i, c, read, count, full_count = 0, ver_match;
 
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
+    int kmode = BUILD_HDCD_EXE_COMPAT,
+        opt_ka = 0, opt_ks = 0, opt_kr = 0;
     int opt_help = 0;
-    int opt_raw_out = 0;
+    int opt_raw_out = 0, opt_raw_in = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "cfho:pqvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "acfhko:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -219,6 +130,9 @@ int main(int argc, char *argv[]) {
             case 'o':
                 outfile = optarg;
                 break;
+            case 'k':
+                kmode = 1;
+                break;
             case 'h':
                 opt_help = 1;
                 break;
@@ -227,6 +141,16 @@ int main(int argc, char *argv[]) {
                 break;
             case 'c':
                 outfile = "-";
+                break;
+            case 'r':
+                opt_raw_in = 1;
+                opt_kr = 1;
+                break;
+            case 's':
+                opt_ks = 1;
+                break;
+            case 'a':
+                opt_ka = 1;
                 break;
             case 'z':
                 if (strcmp(optarg, "off") == 0)
@@ -250,10 +174,28 @@ int main(int argc, char *argv[]) {
                     amode = -1;
                 break;
             default:
-                usage(argv[0]);
+                usage(argv[0], kmode);
                 return 1;
         }
     }
+
+    if (argc - optind >= 1)
+        infile = argv[optind];
+
+    if (kmode) {
+        /* kmode default is -q, requires -s to print messages */
+        if (!opt_quiet) opt_quiet = opt_ks;
+        if (!outfile) outfile = dashfile;
+        /* kmode -a suppress output specified */
+        if (opt_ka) outfile = NULL;
+        /* kmode defaults to reading from stdin */
+        if (!infile) infile = dashfile;
+        /* kmode -r means raw in and out,
+         * normal mode only raw in, requires -p for raw out */
+        if (opt_kr) opt_raw_out = 1;
+    }
+
+    fprintf(stderr, "infile: %s\n", (infile) ? infile : "????");
 
     ver_match = hdcd_lib_version(&lv_major, &lv_minor);
 
@@ -271,37 +213,54 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if (!opt_quiet && kmode) fprintf(stderr, "hdcd.exe compatible mode\n");
+
     if (opt_help) {
-        usage(argv[0]);
+        usage(argv[0], kmode);
         return 0;
     }
 
-    if (argc - optind < 1) {
-        if (!opt_quiet) usage(argv[0]);
+    if (!kmode && !infile) {
+        usage(argv[0], kmode);
         return 1;
     }
-    infile = argv[optind];
 
-    wav = wav_read_open(infile);
-    if (!wav) {
-        if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
-        return 1;
-    }
-    if (!wav_get_header(wav, &format, &channels, &sample_rate, &bits_per_sample, NULL)) {
-        if (!opt_quiet) fprintf(stderr, "Bad wav file %s\n", infile);
-        return 1;
-    }
-    if (format != 1) {
-        if (!opt_quiet) fprintf(stderr, "Unsupported WAV format %d\n", format);
-        return 1;
-    }
-    if (bits_per_sample != 16) {
-        if (!opt_quiet) fprintf(stderr, "Unsupported WAV sample depth %d\n", bits_per_sample);
-        return 1;
-    }
-    if (channels != 2) {
-        if (!opt_quiet) fprintf(stderr, "Unsupported WAV channels %d\n", channels);
-        return 1;
+    if (opt_raw_in) {
+        format = 1;
+        channels = 2;
+        sample_rate = 44100;
+        bits_per_sample = 16;
+        if (strcmp(infile, "-") == 0)
+            fp_raw_in = stdin;
+        else {
+            fp_raw_in = fopen(infile, "rb");
+            if (!fp_raw_in) {
+                if (!opt_quiet) fprintf(stderr, "Unable to open raw pcm file %s\n", infile);
+                return 1;
+            }
+        }
+    } else {
+        wav = wav_read_open(infile);
+        if (!wav) {
+            if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
+            return 1;
+        }
+        if (!wav_get_header(wav, &format, &channels, &sample_rate, &bits_per_sample, NULL)) {
+            if (!opt_quiet) fprintf(stderr, "Bad wav file %s\n", infile);
+            return 1;
+        }
+        if (format != 1) {
+            if (!opt_quiet) fprintf(stderr, "Unsupported WAV format %d\n", format);
+            return 1;
+        }
+        if (bits_per_sample != 16) {
+            if (!opt_quiet) fprintf(stderr, "Unsupported WAV sample depth %d\n", bits_per_sample);
+            return 1;
+        }
+        if (channels != 2) {
+            if (!opt_quiet) fprintf(stderr, "Unsupported WAV channels %d\n", channels);
+            return 1;
+        }
     }
 
     if (outfile) {
@@ -340,13 +299,20 @@ int main(int argc, char *argv[]) {
     process_buf = (int32_t*) malloc(input_size * 2);
 
     while (1) {
-        read = wav_read_data(wav, input_buf, input_size);
+        if (opt_raw_in)
+            read = fread(input_buf, 1, input_size, fp_raw_in);
+         else
+            read = wav_read_data(wav, input_buf, input_size);
+
         /* endian-swap */
         for (i = 0; i < read/2; i++) {
             const uint8_t* in = &input_buf[2*i];
             convert_buf[i] = in[0] | (in[1] << 8);
         }
         count = read / set_size;
+        if (read % set_size) count--; //if there isn't a full set, then forget the last one
+        if (count < 0) count = 0;
+
         /* s16 pcm to s32 pcm to make room for hdcd expansion */
         for (i = 0; i < count * channels; i++)
             process_buf[i] = convert_buf[i];
@@ -367,7 +333,10 @@ int main(int argc, char *argv[]) {
     free(input_buf);
     free(convert_buf);
     free(process_buf);
-    wav_read_close(wav);
+    if (opt_raw_in)
+        fclose(fp_raw_in);
+    else
+        wav_read_close(wav);
     shdcd_free(ctx);
     if (outfile) wav_write_close(wav_out);
 

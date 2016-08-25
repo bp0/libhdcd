@@ -10,8 +10,13 @@ MGCC=i686-w64-mingw32-gcc
 "$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o -Wl,--out-implib,$LIBNAME.a
 rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o
 
-"$MGCC" -c ../tool/hdcd-detect.c ../tool/wavreader.c
-"$MGCC" -o hdcd-detect.exe hdcd-detect.o wavreader.o -L. -l$LIBNAME
-rm -f hdcd-detect.o wavreader.o
+"$MGCC" -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o -L. -l$LIBNAME
+rm -f hdcd-detect.o wavreader.o wavout.o
+
+"$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o -L. -l$LIBNAME
+rm -f hdcd-detect.o wavreader.o wavout.o
+
 
 cd ..
