@@ -28,6 +28,31 @@ die_on_fail() {
     exit EXIT_CODE
 }
 
+test_pipes() {
+    ((TESTS++))
+    TFILE="test/hdcd.raw"
+    THASH="5db465a58d2fd0d06ca944b883b33476"
+    TOUT="$TMP/hdcd_tests_pipes_$$"
+    echo "-test-pipes:"
+    "$HDCD_DETECT" -qcrp - <"$TFILE" |"$MD5SUM" >"$TOUT.md5"
+    "$HDCD_DETECT" -kqcr <"$TFILE" |"$MD5SUM" >"$TOUT.md5.k"
+    sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5"
+    echo "$THASH" >"$TOUT.md5.target"
+    RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
+    RESULTK=$(diff "$TOUT.md5.k" "$TOUT.md5.target")
+    if [ -n "$RESULT" ] && [ -n "$RESULTK" ]; then
+        echo "N: $RESULT"
+        echo "K: $RESULTK"
+        echo "-- FAILED [md5_result]"
+        EXIT_CODE=1
+        die_on_fail
+    else
+        echo "-- PASSED"
+        ((PASSED++))
+    fi
+    rm -f "$TOUT.md5" "$TOUT.md5.k" "$TOUT.md5.target"
+}
+
 do_test() {
     TOPT="$1"
     TFILE="test/$2"
@@ -67,6 +92,8 @@ do_test() {
     fi
     rm -f "$TOUT" "$TOUT.md5" "$TOUT.md5.target"
 }
+
+test_pipes
 
 # format:
 #   do_test <options> <test_file> <md5_result> [<exit_code> [<test_title>]]
