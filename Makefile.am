@@ -25,7 +25,7 @@ DISTCLEANFILES = @DOLT_CLEANFILES@
 EXTRA_DIST =
 
 hdcd_includedir = $(includedir)/hdcd
-hdcd_include_HEADERS = hdcd_decode2.h hdcd_simple.h hdcd_libversion.h
+hdcd_include_HEADERS = hdcd_decode2.h hdcd_simple.h hdcd_libversion.h hdcd_detect.h hdcd_analyze.h
 
 lib_LTLIBRARIES = libhdcd.la
 

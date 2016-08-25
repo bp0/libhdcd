@@ -30,6 +30,8 @@
 
 #include <stdarg.h>
 #include "hdcd_libversion.h"
+#include "hdcd_detect.h"         /* enums for various detection values */
+#include "hdcd_analyze.h"        /* enums and definitions for analyze modes */
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,9 +50,17 @@ void shdcd_free(hdcd_simple_t *ctx);
 
 
 /** is HDCD encoding detected? */
-int shdcd_detected(hdcd_simple_t *ctx);
+/*hdcd_detection_t*/ int shdcd_detected(hdcd_simple_t *ctx);
 /** get a string with an HDCD detection summary */
 void shdcd_detect_str(hdcd_simple_t *ctx, char *str, int maxlen); /* [256] should be enough */
+/** get individual detection values */
+/*hdcd_pf_t*/ int shdcd_detect_packet_type(hdcd_simple_t *ctx);
+              int shdcd_detect_total_packets(hdcd_simple_t *ctx);         /**< valid packets */
+              int shdcd_detect_errors(hdcd_simple_t *ctx);                /**< detectable errors */
+/*hdcd_pe_t*/ int shdcd_detect_peak_extend(hdcd_simple_t *ctx);
+              int shdcd_detect_uses_transient_filter(hdcd_simple_t *ctx);
+              float shdcd_detect_max_gain_adjustment(hdcd_simple_t *ctx); /**< in dB, expected in the range -7.5 to 0.0 */
+              int shdcd_detect_cdt_expirations(hdcd_simple_t *ctx);       /**< -1 for never set, 0 for set but never expired */
 
 
 /** set a logging callback or use the default (print to stderr) */

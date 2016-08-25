@@ -45,6 +45,8 @@
 #include <stdarg.h>
 
 #include "hdcd_libversion.h"
+#include "hdcd_detect.h"         /* enums for various detection values */
+#include "hdcd_analyze.h"        /* enums and definitions for analyze modes */
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,24 +69,6 @@ int hdcd_log_init_ext(hdcd_log_t *log, hdcd_log_callback func, void *priv);
 void hdcd_log(hdcd_log_t *log, const char* fmt, ...);
 void hdcd_log_enable(hdcd_log_t *log);
 void hdcd_log_disable(hdcd_log_t *log);
-
-/********************* optional analyze mode *******************/
-
-typedef enum {
-    HDCD_ANA_OFF    = 0,
-    HDCD_ANA_LLE    = 1,
-    HDCD_ANA_PE     = 2,
-    HDCD_ANA_CDT    = 3,
-    HDCD_ANA_TGM    = 4,
-} hdcd_ana_mode_t;
-
-#define HDCD_ANA_OFF_DESC "disabled"
-#define HDCD_ANA_LLE_DESC "gain adjustment level at each sample"
-#define HDCD_ANA_PE_DESC  "samples where peak extend occurs"
-#define HDCD_ANA_CDT_DESC "samples where the code detect timer is active"
-#define HDCD_ANA_TGM_DESC "samples where the target gain does not match between channels"
-
-const char* hdcd_str_ana_mode(hdcd_ana_mode_t v);
 
 /********************* decoding ********************************/
 
@@ -160,25 +144,6 @@ void hdcd_attach_logger_stereo(hdcd_state_stereo_t *state, hdcd_log_t *log);
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 
 /********************* optional detection and stats ************/
-
-typedef enum {
-    HDCD_NONE            = 0,  /**< HDCD packets do not (yet) appear  */
-    HDCD_NO_EFFECT       = 1,  /**< HDCD packets appear, but all control codes are NOP */
-    HDCD_EFFECTUAL       = 2,  /**< HDCD packets appear, and change the output in some way */
-} hdcd_detection_t;
-
-typedef enum {
-    HDCD_PE_NEVER        = 0, /**< All valid packets have PE set to off */
-    HDCD_PE_INTERMITTENT = 1, /**< Some valid packets have PE set to on */
-    HDCD_PE_PERMANENT    = 2, /**< All valid packets have PE set to on  */
-} hdcd_pe_t;
-
-typedef enum {
-    HDCD_PVER_NONE       = 0, /**< No packets discovered */
-    HDCD_PVER_A          = 1, /**< Packets of type A (8-bit control) discovered */
-    HDCD_PVER_B          = 2, /**< Packets of type B (8-bit control, 8-bit XOR) discovered */
-    HDCD_PVER_MIX        = 3, /**< Packets of type A and B discovered, most likely an error? */
-} hdcd_pf_t;
 
 typedef struct {
     uint32_t sid; /**< internal struct identity = HDCD_SID_DETECTION_DATA */

@@ -89,11 +89,35 @@ void shdcd_free(hdcd_simple_t *s)
 }
 
 /** Is HDCD encoding detected? */
+/*hdcd_detection_t*/
 int shdcd_detected(hdcd_simple_t *s)
 {
     if (!s) return 0;
     return s->detect.hdcd_detected;
 }
+
+/*hdcd_pf_t*/
+int shdcd_detect_packet_type(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.packet_type; else return 0; }
+
+int shdcd_detect_total_packets(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.total_packets; else return 0; }
+
+int shdcd_detect_errors(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.errors; else return 0; }
+
+/*hdcd_pe_t*/
+int shdcd_detect_peak_extend(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.peak_extend; else return 0; }
+
+int shdcd_detect_uses_transient_filter(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.uses_transient_filter; else return 0; }
+
+float shdcd_detect_max_gain_adjustment(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.max_gain_adjustment; else return 0.0; }
+
+int shdcd_detect_cdt_expirations(hdcd_simple_t *ctx)
+{ if (ctx) return ctx->detect.cdt_expirations; else return -1; }
 
 /** get a string with an HDCD detection summary */
 void shdcd_detect_str(hdcd_simple_t *s, char *str, int maxlen)
