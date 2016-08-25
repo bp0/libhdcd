@@ -2,8 +2,14 @@
 
 # Run tests on the HDCD decoder library, against previous results
 
-TMP="/tmp"
-#TMP="/run/shm"
+if [ -d "/run/shm" ]; then
+    TMP="/run/shm"
+elif [ -d "/dev/shm" ]; then
+    TMP="/dev/shm"
+else
+    TMP="/tmp"
+fi
+echo "TMP is $TMP"
 
 HDCD_DETECT="./hdcd-detect"
 MD5SUM=$(which md5sum)
