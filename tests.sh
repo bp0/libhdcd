@@ -121,6 +121,9 @@ do_test "-qx" "hdcd-ftm.wav"  "c7b16edf2b7c36531b551f791da986f6" 0 "for-the-mass
 # hdcd-tgm has a very short target gain mismatch
 do_test "-qx" "hdcd-tgm.wav"  "f3cf4d7fbe2ffbab53a3698730c140d1" 0
 
+# hdcd-pfa has packet format A and is "special mode" with a max gain adjust of -7.0dB
+do_test "-qxp" "hdcd-pfa.wav"  "760628f8e3c81e7f7f94fdf594decd61" 0 "pfa-special-mode"
+
 # ava16 is not HDCD, but has a coincidental valid HDCD packet that
 # applies -6dB in one channel for a short time if target_gain matching is
 # not happening. HDCD should be "not detected"
