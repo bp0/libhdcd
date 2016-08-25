@@ -1566,7 +1566,17 @@ void hdcd_detect_stereo(hdcd_state_stereo_t *state, hdcd_detection_data_t *detec
     hdcd_detect_end(detect, 2);
 }
 
-const char* hdcd_detect_str_pe(hdcd_pe_t v) {
+const char* hdcd_str_detect(hdcd_detection_t v) {
+    static const char * const det_str[] = {
+        "not detected",
+        "detected (no effect)",
+        "detected"
+    };
+    if (v > 2) return "";
+    return det_str[v];
+}
+
+const char* hdcd_str_pe(hdcd_pe_t v) {
     static const char * const pe_str[] = {
         "never enabled",
         "enabled intermittently",
@@ -1576,7 +1586,7 @@ const char* hdcd_detect_str_pe(hdcd_pe_t v) {
     return pe_str[v];
 }
 
-const char* hdcd_detect_str_pformat(hdcd_pf_t v) {
+const char* hdcd_str_pformat(hdcd_pf_t v) {
     static const char * const pf_str[] = {
         "?", "A", "B", "A+B"
     };
@@ -1602,9 +1612,9 @@ void hdcd_detect_str(hdcd_detection_data_t *detect, char *str, int maxlen) {
     if (detect->hdcd_detected)
         snprintf(str, maxlen,
             "HDCD detected: yes (%s:%d), peak_extend: %s, max_gain_adj: %0.1f dB, transient_filter: %s, detectable errors: %d",
-            hdcd_detect_str_pformat(detect->packet_type),
+            hdcd_str_pformat(detect->packet_type),
             detect->total_packets,
-            hdcd_detect_str_pe(detect->peak_extend),
+            hdcd_str_pe(detect->peak_extend),
             detect->max_gain_adjustment,
             (detect->uses_transient_filter) ? "detected" : "not detected",
             detect->errors );

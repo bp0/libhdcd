@@ -168,10 +168,6 @@ void hdcd_detect_end(hdcd_detection_data_t *detect, int channels);
 /* combines _start() _onech()(x2) _end */
 void hdcd_detect_stereo(hdcd_state_stereo_t *state, hdcd_detection_data_t *detect);
 
-/* get a string describing the PE status */
-const char* hdcd_detect_str_pe(hdcd_pe_t v);
-/* get a string describing the packet format found */
-const char* hdcd_detect_str_pformat(hdcd_pf_t v);
 /* get a string with an HDCD detection summary */
 void hdcd_detect_str(hdcd_detection_data_t *detect, char *str, int maxlen); /* [256] should be enough */
 

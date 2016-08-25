@@ -77,6 +77,7 @@ static void usage(const char* name, int kmode) {
         "      \t\t was _NOT_ detected\n"
         "    -o\t\t output file to write\n"
         "    -c\t\t output to stdout\n"
+        "    -d\t\t dump full detection data instead of summary\n"
         "    -z <mode>\t analyze modes:\n");
     for(i = 0; i <= 6; i++)
         fprintf(stderr,
@@ -106,13 +107,13 @@ int main(int argc, char *argv[]) {
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
     int kmode = BUILD_HDCD_EXE_COMPAT,
         opt_ka = 0, opt_ks = 0, opt_kr = 0;
-    int opt_help = 0;
+    int opt_help = 0, opt_dump_detect = 0;
     int opt_raw_out = 0, opt_raw_in = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "acfhko:pqrsvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "acdfhko:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -148,6 +149,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 's':
                 opt_ks = 1;
+                break;
+            case 'd':
+                opt_dump_detect = 1;
                 break;
             case 'a':
                 opt_ka = 1;
@@ -324,11 +328,27 @@ int main(int argc, char *argv[]) {
         full_count += count;
         if (read < input_size) break; /* eof */
     }
-    shdcd_detect_str(ctx, dstr, sizeof(dstr));
     if (xmode) xmode = !shdcd_detected(ctx); /* return zero if (-x) mode and HDCD not detected */
 
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
-    if (!opt_quiet) fprintf(stderr, "%s\n", dstr);
+    if (!opt_quiet) {
+        if (opt_dump_detect) {
+            int det = shdcd_detected(ctx);
+            int pf = shdcd_detect_packet_type(ctx);
+            int pe = shdcd_detect_peak_extend(ctx);
+            fprintf(stderr, ".hdcd_encoding: [%d] %s\n", det, hdcd_str_detect(det) );
+            fprintf(stderr, ".packet_type: [%d] %s\n", pf, hdcd_str_pformat(pf) );
+            fprintf(stderr, ".total_packets: %d\n", shdcd_detect_total_packets(ctx) );
+            fprintf(stderr, ".errors: %d\n", shdcd_detect_errors(ctx) );
+            fprintf(stderr, ".peak_extend: [%d] %s\n", pe, hdcd_str_pe(pe) );
+            fprintf(stderr, ".uses_transient_filter: %d\n", shdcd_detect_uses_transient_filter(ctx) );
+            fprintf(stderr, ".max_gain_adjustment: %0.1f dB\n", shdcd_detect_max_gain_adjustment(ctx) );
+            fprintf(stderr, ".cdt_expirations: %d\n", shdcd_detect_cdt_expirations(ctx) );
+        } else {
+            shdcd_detect_str(ctx, dstr, sizeof(dstr));
+            fprintf(stderr, "%s\n", dstr);
+        }
+    }
 
     free(input_buf);
     free(convert_buf);

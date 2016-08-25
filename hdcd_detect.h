@@ -51,6 +51,13 @@ typedef enum {
     HDCD_PVER_MIX        = 3, /**< Packets of type A and B discovered, most likely an error? */
 } hdcd_pf_t;
 
+/* get a string describing the detection status */
+const char* hdcd_str_detect(hdcd_detection_t v);
+/* get a string describing the PE status */
+const char* hdcd_str_pe(hdcd_pe_t v);
+/* get a string describing the packet format found */
+const char* hdcd_str_pformat(hdcd_pf_t v);
+
 #ifdef __cplusplus
 }
 #endif
