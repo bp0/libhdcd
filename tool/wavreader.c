@@ -18,6 +18,10 @@
 
 #include "wavreader.h"
 #include <stdio.h>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -74,9 +78,12 @@ void* wav_read_open(const char *filename) {
 	long data_pos = 0;
 	memset(wr, 0, sizeof(*wr));
 
-	if (!strcmp(filename, "-"))
+	if (!strcmp(filename, "-")) {
 		wr->wav = stdin;
-	else
+#ifdef _WIN32
+		setmode(fileno(stdin), O_BINARY);
+#endif
+	} else
 		wr->wav = fopen(filename, "rb");
 	if (wr->wav == NULL) {
 		free(wr);

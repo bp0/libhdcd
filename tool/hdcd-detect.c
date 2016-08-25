@@ -54,10 +54,11 @@ static void usage(const char* name, int kmode) {
         fprintf(stderr, "Usage:\n"
             "%s [options] [-o out.wav] in.wav\n", name);
         fprintf(stderr,
-            "    in.wav must be a s16, stereo, 44100Hz wav file\n"
-            "    out.wav will be s24, stereo, 44100Hz\n"
+            "    in.wav must be a s16le, stereo, 44.1kHz wav file\n"
+            "    out.wav will be s24le, stereo, 44.1kHz\n"
             "\n" );
-        fprintf(stderr, "Alternate usage:\n %s [options] -c - <in.wav >out.wav\n", name);
+        fprintf(stderr, "Alternate usage:\n"
+            "%s [options] -c - <in.wav >out.wav\n", name);
         fprintf(stderr,
             "    When using -c with a pipe (non-seekable),\n"
             "    the wav header will not have a correct 'size',\n"
@@ -83,7 +84,15 @@ static void usage(const char* name, int kmode) {
         fprintf(stderr,
         "      \t\t     %s  \t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
     fprintf(stderr,
-        "    -p\t\t output raw pcm samples only without any wav header\n"
+        "    -p\t\t output raw s24le PCM samples only without\n"
+        "      \t\t any wav header\n"
+#if (BUILD_HDCD_EXE_COMPAT == 1)
+        "    -r\t\t input raw s16le PCM samples, expected to be\n"
+        "      \t\t stereo, 44.1kHz (also forces -p)\n"
+#else
+        "    -r\t\t input raw s16le PCM samples, expected to be\n"
+        "      \t\t stereo, 44.1kHz (with -k, -r also forces -p)\n"
+#endif
         "\n");
 }
 

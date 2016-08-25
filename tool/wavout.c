@@ -17,6 +17,10 @@
  */
 
 #include <stdio.h>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -75,9 +79,12 @@ wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int raw) 
     memset(wav, 0, sizeof(*wav));
 
     FILE *fp;
-    if (strcmp(file_name, "-") == 0)
+    if (strcmp(file_name, "-") == 0) {
         fp = stdout;
-    else
+#ifdef _WIN32
+        setmode(fileno(stdout), O_BINARY);
+#endif
+    } else
         fp = fopen(file_name, "wb");
     if(!fp) {
         free(wav);
