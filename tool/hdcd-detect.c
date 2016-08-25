@@ -195,8 +195,6 @@ int main(int argc, char *argv[]) {
         if (opt_kr) opt_raw_out = 1;
     }
 
-    fprintf(stderr, "infile: %s\n", (infile) ? infile : "????");
-
     ver_match = hdcd_lib_version(&lv_major, &lv_minor);
 
     if (!opt_quiet) fprintf(stderr, "HDCD detect/decode tool\n");
@@ -310,7 +308,9 @@ int main(int argc, char *argv[]) {
             convert_buf[i] = in[0] | (in[1] << 8);
         }
         count = read / set_size;
-        if (read % set_size) count--; //if there isn't a full set, then forget the last one
+
+        /* if there isn't a full set, then forget the last one */
+        if (read % set_size) count--;
         if (count < 0) count = 0;
 
         /* s16 pcm to s32 pcm to make room for hdcd expansion */
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
         if (outfile) wav_write(wav_out, process_buf, count * channels);
 
         full_count += count;
-        if (read < input_size) break; // eof
+        if (read < input_size) break; /* eof */
     }
     shdcd_detect_str(ctx, dstr, sizeof(dstr));
     if (xmode) xmode = !shdcd_detected(ctx); /* return zero if (-x) mode and HDCD not detected */
