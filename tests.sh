@@ -13,6 +13,8 @@ if [ -z "$MD5SUM" ]; then
 fi
 
 EXIT_CODE=0
+TESTS=0
+PASSED=0
 
 die_on_fail() {
     EXIT_CODE=$EXIT_CODE # nop in case the next line is commented
@@ -29,6 +31,7 @@ do_test() {
     if [ -z "$TEXI" ]; then TEXI=0; fi
     TTIT="$5"
     if [ -z "$TTIT" ]; then TTIT="$2"; fi
+    ((TESTS++))
     echo "$TTIT:"
     "$HDCD_DETECT" $TOPT -o "$TOUT" "$TFILE"
     HDEX=$?
@@ -53,6 +56,7 @@ do_test() {
             die_on_fail
         else
             echo "-- PASSED"
+            ((PASSED++))
         fi
     fi
     rm -f "$TOUT" "$TOUT.md5" "$TOUT.md5.target"
@@ -101,4 +105,7 @@ do_test "-qx -z ltgm"   "hdcd-ftm.wav"  "7656237a5f8171d58113b5fe5b718738" 0 "an
 do_test "-qx -z ltgm"   "ava16.wav"     "5479204e34eeedf714122c314f779c83" 1 "analyzer-lgtm-nch-process-false-positive"
 do_test "-qx -z cdt"    "ava16.wav"     "d54f7e54623b6bfbe78d127e69fefe6e" 1 "analyzer-cdt-nch-process-false-positive"
 
+
+echo "passed: $PASSED / $TESTS"
+echo "exit: $EXIT_CODE"
 exit $EXIT_CODE
