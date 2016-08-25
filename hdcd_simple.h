@@ -41,7 +41,8 @@ typedef struct hdcd_simple_t hdcd_simple_t;
 
 /** create a new hdcd_simple context */
 hdcd_simple_t *shdcd_new(void);
-/** process 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz */
+/** process 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz.
+ *  the samples will be converted in place to 32-bit samples. */
 void shdcd_process(hdcd_simple_t *ctx, int *samples, int count);
 /** on a song change or something, reset the decoding state */
 void shdcd_reset(hdcd_simple_t *ctx);

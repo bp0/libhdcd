@@ -42,8 +42,9 @@ static void shdcd_smode(hdcd_simple_t *s, int mode)
 {
     if (!s) return;
     if (mode != 0 && mode != 1) return;
-    /* TODO: this needs to be more careful when switching in
-     * the middle of processing */
+    /* TODO: this could be more careful when switching in
+     * the middle of processing, re: last valid tg,
+     * but not critical. */
     s->smode = mode;
 }
 
@@ -194,6 +195,6 @@ const char* shdcd_analyze_mode_desc(int mode)
         SHDCD_ANA_PEL_DESC,
         SHDCD_ANA_LTGM_DESC,
     };
-    if (mode < 0 || mode > 6) return "???";
+    if (mode < 0 || mode > 6) return "";
     return ana_mode_str[mode];
 }

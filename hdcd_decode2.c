@@ -1572,7 +1572,7 @@ const char* hdcd_str_detect(hdcd_detection_t v) {
         "detected (no effect)",
         "detected"
     };
-    if (v > 2) return "";
+    if (v < 0 || v > 2) return "";
     return det_str[v];
 }
 
@@ -1582,7 +1582,7 @@ const char* hdcd_str_pe(hdcd_pe_t v) {
         "enabled intermittently",
         "enabled permanently"
     };
-    if (v > 2) return "";
+    if (v < 0 || v > 2) return "";
     return pe_str[v];
 }
 
@@ -1590,7 +1590,7 @@ const char* hdcd_str_pformat(hdcd_pf_t v) {
     static const char * const pf_str[] = {
         "?", "A", "B", "A+B"
     };
-    if (v > 3) return "";
+    if (v < 0 || v > 3) return "";
     return pf_str[v];
 }
 
@@ -1602,7 +1602,7 @@ const char* hdcd_str_ana_mode(hdcd_ana_mode_t v) {
         HDCD_ANA_CDT_DESC,
         HDCD_ANA_TGM_DESC,
     };
-    if (v > 4) return "";
+    if (v < 0 || v > 4) return "";
     return ana_mode_str[v];
 }
 
