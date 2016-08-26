@@ -78,7 +78,7 @@ static void usage(const char* name, int kmode) {
         "    -f\t\t force overwrite\n"
         "    -x\t\t return non-zero exit code if HDCD encoding\n"
         "      \t\t was _NOT_ detected\n"
-        "    -o\t\t output file to write\n"
+        "    -o <file>\t output file to write\n"
         "    -c\t\t output to stdout\n"
         "    -d\t\t dump full detection data instead of summary\n"
         "    -z <mode>\t analyze modes:\n");
