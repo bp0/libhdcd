@@ -34,6 +34,8 @@
 #include "wavreader.h"
 #include "wavout.h"
 
+#define OPT_KI_SCAN_MAX 44100 /* one full second */
+
 int lv_major = HDCDLIB_VER_MAJOR;
 int lv_minor = HDCDLIB_VER_MINOR;
 
@@ -343,7 +345,14 @@ int main(int argc, char *argv[]) {
         if (outfile) wav_write(wav_out, process_buf, count * channels);
 
         full_count += count;
-        if (opt_ki && shdcd_detected(ctx)) break; /* -i mode, break when HDCD is discovered */
+        if (opt_ki) {
+            /* -i mode, break when HDCD is discovered*/
+            if (shdcd_detected(ctx))
+                break;
+            /* limit scanning to first OPT_KI_SCAN_MAX samples */
+            if (full_count >= OPT_KI_SCAN_MAX)
+                break;
+        }
         if (read < input_size) break; /* eof */
     }
     if (xmode) xmode = !shdcd_detected(ctx); /* return non-zero if (-x) mode and HDCD not detected */
