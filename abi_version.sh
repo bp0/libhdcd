@@ -43,6 +43,12 @@ case $1 in
     -libtool)
         printf '%s' "$CURRENT:$REVISION:$AGE"
     ;;
+    -win)
+        printf '%s' "$CURRENT,$REVISION,0,0"
+    ;;
+    -winh)
+        printf '%s' "$CURRENT.$REVISION"
+    ;;
     *)
         printf '%s' "$CURRENT.$REVISION.$AGE"
     ;;

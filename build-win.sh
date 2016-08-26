@@ -2,21 +2,65 @@
 
 LIBNAME=libhdcd
 
+VER=$(./abi_version.sh -winh)
+WVER=$(./abi_version.sh -win)
+
+MGCC=i686-w64-mingw32-gcc
+MWINDRES=i686-w64-mingw32-windres
+MDLLTOOL=i686-w64-mingw32-dlltool
+
+create_rc() {
+RN="$1"
+ON="$2"
+cat << EOF > "$RN.rc"
+1 VERSIONINFO
+FILEVERSION     $WVER
+PRODUCTVERSION  $WVER
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", ""
+      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder library"
+      VALUE "FileVersion", "$VER"
+      VALUE "InternalName", "libhdcd"
+      VALUE "LegalCopyright", "libhdcd AUTHORS"
+      VALUE "OriginalFilename", "$ON"
+      VALUE "ProductName", "libhdcd"
+      VALUE "ProductVersion", "$VER"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+EOF
+"$MWINDRES" "$RN.rc" -O coff -o "$RN"
+}
+
 mkdir -p win-bin
 cd win-bin
 
-MGCC=i686-w64-mingw32-gcc
+create_rc "libhdcd.res" "libhdcd.dll"
+create_rc "hdcd-detect.res" "hdcd-detect.exe"
+create_rc "hdcd.res" "hdcd.exe"
+
 "$MGCC" -c ../hdcd_decode2.c ../hdcd_simple.c ../hdcd_libversion.c
-"$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o -Wl,--out-implib,$LIBNAME.a
+"$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.a
+
+"$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o hdcd.res
+rm -f hdcd-detect.o wavreader.o wavout.o
 rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o
 
 "$MGCC" -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o -L. -l$LIBNAME
+"$MGCC" -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o hdcd-detect.res -L. -l$LIBNAME
 rm -f hdcd-detect.o wavreader.o wavout.o
 
-"$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o -L. -l$LIBNAME
-rm -f hdcd-detect.o wavreader.o wavout.o
-
+rm -f "libhdcd.res" "hdcd-detect.res" "hdcd.res"
+rm -f "libhdcd.res.rc" "hdcd-detect.res.rc" "hdcd.res.rc"
 
 cd ..
