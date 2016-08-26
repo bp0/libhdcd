@@ -1,14 +1,16 @@
 #!/bin/bash
 
+MGCC=i686-w64-mingw32-gcc
+MWINDRES=i686-w64-mingw32-windres
 LIBNAME=libhdcd
+
+if [ -z `which perl` ]; then echo "Needs perl"; exit 1; fi
+if [ -z `which "$MGCC"` ]; then echo "Needs mingw gcc"; exit 1; fi
+if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 
 PVER=$(./package_version.sh)
 WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+)/) ? "$1,$2,$3,0" : "0,0,0,0")}')
 echo "PVER: $PVER -- WVER: $WVER"
-
-MGCC=i686-w64-mingw32-gcc
-MWINDRES=i686-w64-mingw32-windres
-MDLLTOOL=i686-w64-mingw32-dlltool
 
 create_rc() {
 RN="$1"
