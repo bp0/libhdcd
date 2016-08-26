@@ -2,8 +2,9 @@
 
 LIBNAME=libhdcd
 
-VER=$(./abi_version.sh -winh)
-WVER=$(./abi_version.sh -win)
+PVER=$(./package_version.sh)
+WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+)/) ? "$1,$2,$3,0" : "0,0,0,0")}')
+echo "PVER: $PVER -- WVER: $WVER"
 
 MGCC=i686-w64-mingw32-gcc
 MWINDRES=i686-w64-mingw32-windres
@@ -23,12 +24,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", ""
       VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder library"
-      VALUE "FileVersion", "$VER"
+      VALUE "FileVersion", "$PVER"
       VALUE "InternalName", "libhdcd"
       VALUE "LegalCopyright", "libhdcd AUTHORS"
       VALUE "OriginalFilename", "$ON"
       VALUE "ProductName", "libhdcd"
-      VALUE "ProductVersion", "$VER"
+      VALUE "ProductVersion", "$PVER"
     END
   END
 
