@@ -89,6 +89,8 @@ static void usage(const char* name, int kmode) {
 #if (BUILD_HDCD_EXE_COMPAT == 1)
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
         "      \t\t stereo, 44.1kHz (also forces -p)\n"
+        "    -a\t\t supress output\n"
+        "    -i\t\t identify HDCD, implies -a -x\n"
 #else
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
         "      \t\t stereo, 44.1kHz (with -k, -r also forces -p)\n"
@@ -115,14 +117,14 @@ int main(int argc, char *argv[]) {
 
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
     int kmode = BUILD_HDCD_EXE_COMPAT,
-        opt_ka = 0, opt_ks = 0, opt_kr = 0;
+        opt_ka = 0, opt_ks = 0, opt_kr = 0, opt_ki = 0;
     int opt_help = 0, opt_dump_detect = 0;
     int opt_raw_out = 0, opt_raw_in = 0;
 
     hdcd_simple_t *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "acdfhko:pqrsvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "acdfhiko:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -142,6 +144,12 @@ int main(int argc, char *argv[]) {
                 break;
             case 'k':
                 kmode = 1;
+                break;
+            case 'i':
+                opt_ki = 1;
+                xmode = 1;
+                opt_ka = 1;
+                opt_quiet = 1;
                 break;
             case 'h':
                 opt_help = 1;
@@ -335,9 +343,18 @@ int main(int argc, char *argv[]) {
         if (outfile) wav_write(wav_out, process_buf, count * channels);
 
         full_count += count;
+        if (opt_ki && shdcd_detected(ctx)) break; /* -i mode, break when HDCD is discovered */
         if (read < input_size) break; /* eof */
     }
-    if (xmode) xmode = !shdcd_detected(ctx); /* return zero if (-x) mode and HDCD not detected */
+    if (xmode) xmode = !shdcd_detected(ctx); /* return non-zero if (-x) mode and HDCD not detected */
+
+    if (opt_ki) {
+        /* strings are exactly those given by Key's hdcd.exe -i */
+        if (shdcd_detected(ctx))
+            fprintf(stderr, "HDCD Detected\n");
+        else
+            fprintf(stderr, "HDCD not detected\n");
+    }
 
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     if (!opt_quiet) {
