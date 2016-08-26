@@ -84,7 +84,7 @@ static void usage(const char* name, int kmode) {
         "    -z <mode>\t analyze modes:\n");
     for(i = 0; i <= 6; i++)
         fprintf(stderr,
-        "      \t\t     %s  \t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
+        "      \t\t     %s  \t%s\n", amode_name[i], hdcd_str_analyze_mode_desc(i) );
     fprintf(stderr,
         "    -p\t\t output raw s24le PCM samples only without\n"
         "      \t\t any wav header\n");
@@ -180,19 +180,19 @@ int main(int argc, char *argv[]) {
                 break;
             case 'z':
                 if (strcmp(optarg, "off") == 0)
-                    amode = SHDCD_ANA_OFF;
+                    amode = HDCD_ANA_OFF;
                 else if (strcmp(optarg, "lle") == 0)
-                    amode = SHDCD_ANA_LLE;
+                    amode = HDCD_ANA_LLE;
                 else if (strcmp(optarg, "pe") == 0)
-                    amode = SHDCD_ANA_PE;
+                    amode = HDCD_ANA_PE;
                 else if (strcmp(optarg, "cdt") == 0)
-                    amode = SHDCD_ANA_CDT;
+                    amode = HDCD_ANA_CDT;
                 else if (strcmp(optarg, "tgm") == 0)
-                    amode = SHDCD_ANA_TGM;
+                    amode = HDCD_ANA_TGM;
                 else if (strcmp(optarg, "pel") == 0)
-                    amode = SHDCD_ANA_PEL;
+                    amode = HDCD_ANA_PEL;
                 else if (strcmp(optarg, "ltgm") == 0)
-                    amode = SHDCD_ANA_LTGM;
+                    amode = HDCD_ANA_LTGM;
                 else
                     amode = atoi(optarg);
 
@@ -302,15 +302,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    ctx = shdcd_new();
-    if (!opt_quiet) shdcd_default_logger(ctx);
+    ctx = hdcd_new();
+    if (!opt_quiet) hdcd_logger_default(ctx);
     if (amode) {
         if (!outfile) {
             if (!opt_quiet) fprintf(stderr, "Without an output file, analyze mode does nothing\n");
             return 1;
         }
-        if (!opt_quiet) fprintf(stderr, "Analyze mode [%s]: %s\n", amode_name[amode], shdcd_analyze_mode_desc(amode) );
-        if (!shdcd_analyze_mode(ctx, amode)) {
+        if (!opt_quiet) fprintf(stderr, "Analyze mode [%s]: %s\n", amode_name[amode], hdcd_str_analyze_mode_desc(amode) );
+        if (!hdcd_analyze_mode(ctx, amode)) {
             if (!opt_quiet) fprintf(stderr, "Failed to set mode for analyze\n");
             return 1;
         }
@@ -343,14 +343,14 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < count * channels; i++)
             process_buf[i] = convert_buf[i];
 
-        shdcd_process(ctx, process_buf, count);
+        hdcd_process(ctx, process_buf, count);
 
         if (outfile) wav_write(wav_out, process_buf, count * channels);
 
         full_count += count;
         if (opt_ki) {
             /* -i mode, break when HDCD is discovered*/
-            if (shdcd_detected(ctx))
+            if (hdcd_detected(ctx))
                 break;
             /* limit scanning to first OPT_KI_SCAN_MAX samples */
             if (full_count >= OPT_KI_SCAN_MAX)
@@ -358,11 +358,11 @@ int main(int argc, char *argv[]) {
         }
         if (read < input_size) break; /* eof */
     }
-    if (xmode) xmode = !shdcd_detected(ctx); /* return non-zero if (-x) mode and HDCD not detected */
+    if (xmode) xmode = !hdcd_detected(ctx); /* return non-zero if (-x) mode and HDCD not detected */
 
     if (opt_ki) {
         /* strings are exactly those given by Key's hdcd.exe -i */
-        if (shdcd_detected(ctx))
+        if (hdcd_detected(ctx))
             fprintf(stderr, "HDCD Detected\n");
         else
             fprintf(stderr, "HDCD not detected\n");
@@ -371,19 +371,19 @@ int main(int argc, char *argv[]) {
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     if (!opt_quiet) {
         if (opt_dump_detect) {
-            int det = shdcd_detected(ctx);
-            int pf = shdcd_detect_packet_type(ctx);
-            int pe = shdcd_detect_peak_extend(ctx);
+            int det = hdcd_detected(ctx);
+            int pf = hdcd_detect_packet_type(ctx);
+            int pe = hdcd_detect_peak_extend(ctx);
             fprintf(stderr, ".hdcd_encoding: [%d] %s\n", det, hdcd_str_detect(det) );
             fprintf(stderr, ".packet_type: [%d] %s\n", pf, hdcd_str_pformat(pf) );
-            fprintf(stderr, ".total_packets: %d\n", shdcd_detect_total_packets(ctx) );
-            fprintf(stderr, ".errors: %d\n", shdcd_detect_errors(ctx) );
+            fprintf(stderr, ".total_packets: %d\n", hdcd_detect_total_packets(ctx) );
+            fprintf(stderr, ".errors: %d\n", hdcd_detect_errors(ctx) );
             fprintf(stderr, ".peak_extend: [%d] %s\n", pe, hdcd_str_pe(pe) );
-            fprintf(stderr, ".uses_transient_filter: %d\n", shdcd_detect_uses_transient_filter(ctx) );
-            fprintf(stderr, ".max_gain_adjustment: %0.1f dB\n", shdcd_detect_max_gain_adjustment(ctx) );
-            fprintf(stderr, ".cdt_expirations: %d\n", shdcd_detect_cdt_expirations(ctx) );
+            fprintf(stderr, ".uses_transient_filter: %d\n", hdcd_detect_uses_transient_filter(ctx) );
+            fprintf(stderr, ".max_gain_adjustment: %0.1f dB\n", hdcd_detect_max_gain_adjustment(ctx) );
+            fprintf(stderr, ".cdt_expirations: %d\n", hdcd_detect_cdt_expirations(ctx) );
         } else {
-            shdcd_detect_str(ctx, dstr, sizeof(dstr));
+            hdcd_detect_str(ctx, dstr, sizeof(dstr));
             fprintf(stderr, "%s\n", dstr);
         }
     }
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
         fclose(fp_raw_in);
     else
         wav_read_close(wav);
-    shdcd_free(ctx);
+    hdcd_free(ctx);
     if (outfile) wav_write_close(wav_out);
 
     return xmode;

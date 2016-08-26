@@ -33,27 +33,27 @@ Simple API
 
 ### Declare and initialize
 
-    hdcd_simple *ctx = shdcd_new();
+    hdcd_simple *ctx = hdcd_new();
 
 ### Each frame
-    
-    shdcd_process(ctx, samples, count);
+
+    hdcd_process(ctx, samples, count);
 
 ### Song change, seek, etc.
 
-    shdcd_reset(ctx);  /* reset the decoder state */
+    hdcd_reset(ctx);  /* reset the decoder state */
 
 It is best to shdcd_reset() and then seek a couple seconds behind the target to let the the decoder process samples and catch the nearest packet. The samples leading up to the seek target can then be discarded.
 
 ### Cleanup
-    
-    shdcd_free(ctx);
+
+    hdcd_free(ctx);
 
 ### Analyze mode
 
 A mode to aid in analysis of HDCD encoded audio. In this mode the audio is replaced by a solid tone and the amplitude is adjusted to signal some specified aspect of the process. The output can be loaded in an audio editor alongside the original, where the user can see where different features or states are present.
-See shdcd_ana_mode_t in hdcd_simple.h. See also [HDCD § Analyze mode](http://wiki.hydrogenaud.io/index.php?title=High_Definition_Compatible_Digital#Analyze_mode)
+See hdcd_ana_mode in hdcd_analyze.h. See also [HDCD § Analyze mode](http://wiki.hydrogenaud.io/index.php?title=High_Definition_Compatible_Digital#Analyze_mode)
 
-    shdcd_analyze_mode(MODE);
+    hdcd_analyze_mode(MODE);
 
 

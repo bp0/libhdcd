@@ -32,23 +32,33 @@
 extern "C" {
 #endif
 
+/** Analyze mode(s)
+ *
+ *   In analyze mode, the audio is replaced by a solid tone, and
+ *   amplitude is changed to signal when the specified feature is
+ *   used, or some decoding state exists.
+ */
+
 typedef enum {
     HDCD_ANA_OFF    = 0,
     HDCD_ANA_LLE    = 1,
     HDCD_ANA_PE     = 2,
     HDCD_ANA_CDT    = 3,
     HDCD_ANA_TGM    = 4,
+    HDCD_ANA_PEL    = 5, /* added with simple api */
+    HDCD_ANA_LTGM   = 6, /* added with simple api */
 } hdcd_ana_mode;
-
-typedef int hdcd_ana_mode_t; /* hdcd_ana_mode_t was renamed hdcd_ana_mode */
 
 #define HDCD_ANA_OFF_DESC "disabled"
 #define HDCD_ANA_LLE_DESC "gain adjustment level at each sample"
 #define HDCD_ANA_PE_DESC  "samples where peak extend occurs"
 #define HDCD_ANA_CDT_DESC "samples where the code detect timer is active"
 #define HDCD_ANA_TGM_DESC "samples where the target gain does not match between channels"
+#define HDCD_ANA_PEL_DESC  "any samples above peak extend level"
+#define HDCD_ANA_LTGM_DESC "gain adjustment level at each sample, in each channel"
 
-const char* hdcd_str_ana_mode(hdcd_ana_mode mode);
+/** get a nice description of what a mode does */
+const char* hdcd_str_analyze_mode_desc(hdcd_ana_mode mode);
 
 #ifdef __cplusplus
 }

@@ -9,7 +9,7 @@ if [ -z `which "$MGCC"` ]; then echo "Needs mingw gcc"; exit 1; fi
 if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 
 PVER=$(./package_version.sh)
-WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+)/) ? "$1,$2,$3,0" : "0,0,0,0")}')
+WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+|)/) ? "$1,$2,".($3||0).",0" : "0,0,0,0")}')
 echo "PVER: $PVER -- WVER: $WVER"
 
 create_rc() {

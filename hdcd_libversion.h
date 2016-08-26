@@ -32,8 +32,8 @@
 extern "C" {
 #endif
 
-#define HDCDLIB_VER_MAJOR 0  /* used as libtool 'current'  */
-#define HDCDLIB_VER_MINOR 2  /* used as libtool 'revision' */
+#define HDCDLIB_VER_MAJOR 1  /* used as libtool 'current'  */
+#define HDCDLIB_VER_MINOR 0  /* used as libtool 'revision' */
 #define HDCDLIB_VER_AGE   0  /* used as libtool 'age'      */
 /* age is the difference between the 'current' and whatever
  * old 'current' version the library can still safely link against.
