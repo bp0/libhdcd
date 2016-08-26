@@ -873,7 +873,7 @@ void hdcd_log(hdcd_log_t *log, const char* fmt, ...) {
     }
 }
 
-void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log)
+void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log_t *log)
 {
     int i;
     if (!state) return;
@@ -916,7 +916,7 @@ void hdcd_reset(hdcd_state_t *state, unsigned rate) {
     if (!state) return;
     hdcd_reset_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
 }
-void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode) {
+void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode mode) {
     if (!state) return;
     state->ana_mode = mode;
 }
@@ -925,7 +925,7 @@ void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log) {
     state->log = log;
 }
 
-void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log) {
+void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log_t *log) {
     if (!state) return;
     memset(state, 0, sizeof(*state));
     state->sid = HDCD_SID_STATE_STEREO;
@@ -939,7 +939,7 @@ void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate) {
     if (!state) return;
     hdcd_reset_stereo_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
 }
-void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode) {
+void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode mode) {
     if (!state) return;
     state->ana_mode = mode;
     hdcd_set_analyze_mode(&state->channel[0], mode);
@@ -1521,7 +1521,7 @@ void hdcd_detect_start(hdcd_detection_data_t *detect) {
 }
 
 void hdcd_detect_onech(hdcd_state_t *state, hdcd_detection_data_t *detect) {
-    hdcd_pe_t pe = HDCD_PE_NEVER;
+    hdcd_pe pe = HDCD_PE_NEVER;
     if (!detect) return;
     detect->uses_transient_filter |= !!(state->count_transient_filter);
     detect->total_packets += state->code_counterA + state->code_counterB;

@@ -115,7 +115,7 @@ typedef struct {
 
     hdcd_log_t *log;            /**< optional logging */
     int sample_count;           /**< used in logging  */
-    hdcd_ana_mode_t ana_mode;   /**< analyze mode     */
+    hdcd_ana_mode ana_mode;     /**< analyze mode     */
     int _ana_snb;               /**< used in the analyze mode tone generator */
 
 } hdcd_state_t;
@@ -124,22 +124,22 @@ typedef struct {
     uint32_t sid; /**< internal struct identity = HDCD_SID_STATE_STEREO */
 
     hdcd_state_t channel[2];    /**< individual channel states       */
-    hdcd_ana_mode_t ana_mode;   /**< analyze mode                    */
+    hdcd_ana_mode ana_mode;     /**< analyze mode                    */
     int val_target_gain;        /**< last valid matching target_gain */
     int count_tg_mismatch;      /**< target_gain mismatch occurred.  */
 } hdcd_state_stereo_t;
 
 /* n-channel versions */
 void hdcd_reset(hdcd_state_t *state, unsigned rate);
-void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
-void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode_t mode);
+void hdcd_reset_ext(hdcd_state_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log_t *log);
+void hdcd_set_analyze_mode(hdcd_state_t *state, hdcd_ana_mode mode);
 void hdcd_attach_logger(hdcd_state_t *state, hdcd_log_t *log);
 void hdcd_process(hdcd_state_t *state, int *samples, int count, int stride);
 
 /* stereo versions */
 void hdcd_reset_stereo(hdcd_state_stereo_t *state, unsigned rate);
-void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode_t analyze_mode, hdcd_log_t *log);
-void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode_t mode);
+void hdcd_reset_stereo_ext(hdcd_state_stereo_t *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log_t *log);
+void hdcd_set_analyze_mode_stereo(hdcd_state_stereo_t *state, hdcd_ana_mode mode);
 void hdcd_attach_logger_stereo(hdcd_state_stereo_t *state, hdcd_log_t *log);
 void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 
@@ -148,11 +148,11 @@ void hdcd_process_stereo(hdcd_state_stereo_t *state, int *samples, int count);
 typedef struct {
     uint32_t sid; /**< internal struct identity = HDCD_SID_DETECTION_DATA */
 
-    hdcd_detection_t hdcd_detected;
-    hdcd_pf_t packet_type;
+    hdcd_dv hdcd_detected;
+    hdcd_pf packet_type;
     int total_packets;         /**< valid packets */
     int errors;                /**< detectable errors */
-    hdcd_pe_t peak_extend;
+    hdcd_pe peak_extend;
     int uses_transient_filter;
     float max_gain_adjustment; /**< in dB, expected in the range -7.5 to 0.0 */
     int cdt_expirations;       /**< -1 for never set, 0 for set but never expired */
