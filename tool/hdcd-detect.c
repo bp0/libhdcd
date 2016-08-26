@@ -47,15 +47,15 @@ static void usage(const char* name, int kmode) {
         fprintf(stderr, "Usage:\n"
             "%s [options] [in.wav]\n", name);
         fprintf(stderr,
-            "    inpuit must be a s16, stereo, 44100Hz wav file\n"
-            "    output will be s24, stereo, 44100Hz\n"
+            "    input must be a s16le, stereo, 44.1kHz WAV file\n"
+            "    output will be s24le, stereo, 44.1kHz\n"
             "\n" );
     } else {
         fprintf(stderr, "Usage:\n"
             "%s [options] [-o out.wav] in.wav\n", name);
         fprintf(stderr,
-            "    in.wav must be a s16le, stereo, 44.1kHz wav file\n"
-            "    out.wav will be s24le, stereo, 44.1kHz\n"
+            "    input must be a s16le, stereo, 44.1kHz WAV file\n"
+            "    output will be s24le, stereo, 44.1kHz\n"
             "\n" );
         fprintf(stderr, "Alternate usage:\n"
             "%s [options] -c - <in.wav >out.wav\n", name);
