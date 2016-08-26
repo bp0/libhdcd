@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     int opt_help = 0, opt_dump_detect = 0;
     int opt_raw_out = 0, opt_raw_in = 0;
 
-    hdcd_simple_t *ctx;
+    hdcd_simple *ctx;
     char dstr[256];
 
     while ((c = getopt(argc, argv, "acdfhiko:pqrsvxz:")) != -1) {
