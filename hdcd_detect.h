@@ -36,27 +36,31 @@ typedef enum {
     HDCD_NONE            = 0,  /**< HDCD packets do not (yet) appear  */
     HDCD_NO_EFFECT       = 1,  /**< HDCD packets appear, but all control codes are NOP */
     HDCD_EFFECTUAL       = 2,  /**< HDCD packets appear, and change the output in some way */
-} hdcd_detection_t;
+} hdcd_dv;
 
 typedef enum {
     HDCD_PE_NEVER        = 0, /**< All valid packets have PE set to off */
     HDCD_PE_INTERMITTENT = 1, /**< Some valid packets have PE set to on */
     HDCD_PE_PERMANENT    = 2, /**< All valid packets have PE set to on  */
-} hdcd_pe_t;
+} hdcd_pe;
 
 typedef enum {
     HDCD_PVER_NONE       = 0, /**< No packets discovered */
     HDCD_PVER_A          = 1, /**< Packets of type A (8-bit control) discovered */
     HDCD_PVER_B          = 2, /**< Packets of type B (8-bit control, 8-bit XOR) discovered */
     HDCD_PVER_MIX        = 3, /**< Packets of type A and B discovered, most likely an error? */
-} hdcd_pf_t;
+} hdcd_pf;
+
+typedef int hdcd_detection_t; /* hdcd_detection was renamed hdcd_dv */
+typedef int hdcd_pf_t; /* hdcd_pf_t was renamed hdcd_pf */
+typedef int hdcd_pe_t; /* hdcd_pe_t was renamed hdcd_pe */
 
 /* get a string describing the detection status */
-const char* hdcd_str_detect(hdcd_detection_t v);
+const char* hdcd_str_detect(hdcd_dv v);
 /* get a string describing the PE status */
-const char* hdcd_str_pe(hdcd_pe_t v);
+const char* hdcd_str_pe(hdcd_pe v);
 /* get a string describing the packet format found */
-const char* hdcd_str_pformat(hdcd_pf_t v);
+const char* hdcd_str_pformat(hdcd_pf v);
 
 #ifdef __cplusplus
 }

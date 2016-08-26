@@ -1566,7 +1566,7 @@ void hdcd_detect_stereo(hdcd_state_stereo_t *state, hdcd_detection_data_t *detec
     hdcd_detect_end(detect, 2);
 }
 
-const char* hdcd_str_detect(hdcd_detection_t v) {
+const char* hdcd_str_detect(hdcd_dv v) {
     static const char * const det_str[] = {
         "not detected",
         "detected (no effect)",
@@ -1576,7 +1576,7 @@ const char* hdcd_str_detect(hdcd_detection_t v) {
     return det_str[v];
 }
 
-const char* hdcd_str_pe(hdcd_pe_t v) {
+const char* hdcd_str_pe(hdcd_pe v) {
     static const char * const pe_str[] = {
         "never enabled",
         "enabled intermittently",
@@ -1586,7 +1586,7 @@ const char* hdcd_str_pe(hdcd_pe_t v) {
     return pe_str[v];
 }
 
-const char* hdcd_str_pformat(hdcd_pf_t v) {
+const char* hdcd_str_pformat(hdcd_pf v) {
     static const char * const pf_str[] = {
         "?", "A", "B", "A+B"
     };
@@ -1594,7 +1594,7 @@ const char* hdcd_str_pformat(hdcd_pf_t v) {
     return pf_str[v];
 }
 
-const char* hdcd_str_ana_mode(hdcd_ana_mode_t v) {
+const char* hdcd_str_ana_mode(hdcd_ana_mode v) {
     static const char * const ana_mode_str[] = {
         HDCD_ANA_OFF_DESC,
         HDCD_ANA_LLE_DESC,

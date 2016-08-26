@@ -38,7 +38,9 @@ typedef enum {
     HDCD_ANA_PE     = 2,
     HDCD_ANA_CDT    = 3,
     HDCD_ANA_TGM    = 4,
-} hdcd_ana_mode_t;
+} hdcd_ana_mode;
+
+typedef int hdcd_ana_mode_t; /* hdcd_ana_mode_t was renamed hdcd_ana_mode */
 
 #define HDCD_ANA_OFF_DESC "disabled"
 #define HDCD_ANA_LLE_DESC "gain adjustment level at each sample"
@@ -46,7 +48,7 @@ typedef enum {
 #define HDCD_ANA_CDT_DESC "samples where the code detect timer is active"
 #define HDCD_ANA_TGM_DESC "samples where the target gain does not match between channels"
 
-const char* hdcd_str_ana_mode(hdcd_ana_mode_t mode);
+const char* hdcd_str_ana_mode(hdcd_ana_mode mode);
 
 #ifdef __cplusplus
 }

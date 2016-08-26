@@ -30,7 +30,7 @@
 #include "hdcd_decode2.h"
 #include "hdcd_simple.h"
 
-struct hdcd_simple_t {
+struct hdcd_simple {
     hdcd_state_stereo_t state;
     hdcd_detection_data_t detect;
     hdcd_log_t logger;
@@ -38,7 +38,7 @@ struct hdcd_simple_t {
 };
 
 /** set stereo processing mode, only used internally */
-static void shdcd_smode(hdcd_simple_t *s, int mode)
+static void shdcd_smode(hdcd_simple *s, int mode)
 {
     if (!s) return;
     if (mode != 0 && mode != 1) return;
@@ -49,9 +49,9 @@ static void shdcd_smode(hdcd_simple_t *s, int mode)
 }
 
 /** create a new hdcd_simple context */
-hdcd_simple_t *shdcd_new(void)
+hdcd_simple *shdcd_new(void)
 {
-    hdcd_simple_t *s = malloc(sizeof(*s));
+    hdcd_simple *s = malloc(sizeof(*s));
     if (s) {
         memset(s, 0, sizeof(*s));
         shdcd_reset(s);
@@ -60,7 +60,7 @@ hdcd_simple_t *shdcd_new(void)
 }
 
 /** on a song change or something, reset the decoding state */
-void shdcd_reset(hdcd_simple_t *s)
+void shdcd_reset(hdcd_simple *s)
 {
     if (!s) return;
     hdcd_reset_stereo_ext(&s->state, 44100, 2000, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
@@ -69,7 +69,7 @@ void shdcd_reset(hdcd_simple_t *s)
 }
 
 /** process signed 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz */
-void shdcd_process(hdcd_simple_t *s, int *samples, int count)
+void shdcd_process(hdcd_simple *s, int *samples, int count)
 {
     if (!s) return;
     if (s->smode)
@@ -84,50 +84,50 @@ void shdcd_process(hdcd_simple_t *s, int *samples, int count)
 }
 
 /** free the context when finished */
-void shdcd_free(hdcd_simple_t *s)
+void shdcd_free(hdcd_simple *s)
 {
     if(s) free(s);
 }
 
 /** Is HDCD encoding detected? */
 /*hdcd_detection_t*/
-int shdcd_detected(hdcd_simple_t *s)
+int shdcd_detected(hdcd_simple *s)
 {
     if (!s) return 0;
     return s->detect.hdcd_detected;
 }
 
 /*hdcd_pf_t*/
-int shdcd_detect_packet_type(hdcd_simple_t *ctx)
+int shdcd_detect_packet_type(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.packet_type; else return 0; }
 
-int shdcd_detect_total_packets(hdcd_simple_t *ctx)
+int shdcd_detect_total_packets(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.total_packets; else return 0; }
 
-int shdcd_detect_errors(hdcd_simple_t *ctx)
+int shdcd_detect_errors(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.errors; else return 0; }
 
 /*hdcd_pe_t*/
-int shdcd_detect_peak_extend(hdcd_simple_t *ctx)
+int shdcd_detect_peak_extend(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.peak_extend; else return 0; }
 
-int shdcd_detect_uses_transient_filter(hdcd_simple_t *ctx)
+int shdcd_detect_uses_transient_filter(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.uses_transient_filter; else return 0; }
 
-float shdcd_detect_max_gain_adjustment(hdcd_simple_t *ctx)
+float shdcd_detect_max_gain_adjustment(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.max_gain_adjustment; else return 0.0; }
 
-int shdcd_detect_cdt_expirations(hdcd_simple_t *ctx)
+int shdcd_detect_cdt_expirations(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.cdt_expirations; else return -1; }
 
 /** get a string with an HDCD detection summary */
-void shdcd_detect_str(hdcd_simple_t *s, char *str, int maxlen)
+void shdcd_detect_str(hdcd_simple *s, char *str, int maxlen)
 {
     if (!s || !str) return;
     hdcd_detect_str(&s->detect, str, maxlen);
 }
 
-int shdcd_attach_logger(hdcd_simple_t *s, hdcd_log_callback func, void *priv)
+int shdcd_attach_logger(hdcd_simple *s, hdcd_log_callback func, void *priv)
 {
     if (!s) return 0;
     if (!func) return 0;
@@ -136,14 +136,14 @@ int shdcd_attach_logger(hdcd_simple_t *s, hdcd_log_callback func, void *priv)
     return 1;
 }
 
-void shdcd_default_logger(hdcd_simple_t *s)
+void shdcd_default_logger(hdcd_simple *s)
 {
     if (!s) return;
     hdcd_log_init_ext(&s->logger, NULL, NULL);
     hdcd_attach_logger_stereo(&s->state, &s->logger);
 }
 
-void shdcd_detach_logger(hdcd_simple_t *s)
+void shdcd_detach_logger(hdcd_simple *s)
 {
     if (!s) return;
     /* just reset to the default and then disable */
@@ -152,7 +152,7 @@ void shdcd_detach_logger(hdcd_simple_t *s)
     hdcd_log_disable(&s->logger);
 }
 
-int shdcd_analyze_mode(hdcd_simple_t *s, int mode)
+int shdcd_analyze_mode(hdcd_simple *s, int mode)
 {
     if (!s) return 0;
 
