@@ -34,7 +34,7 @@
 #include "wavreader.h"
 #include "wavout.h"
 
-#define OPT_KI_SCAN_MAX 44100 /* one full second */
+#define OPT_KI_SCAN_MAX 88200 /* two full seconds */
 
 int lv_major = HDCDLIB_VER_MAJOR;
 int lv_minor = HDCDLIB_VER_MINOR;
@@ -87,17 +87,20 @@ static void usage(const char* name, int kmode) {
         "      \t\t     %s  \t%s\n", amode_name[i], shdcd_analyze_mode_desc(i) );
     fprintf(stderr,
         "    -p\t\t output raw s24le PCM samples only without\n"
-        "      \t\t any wav header\n"
-#if (BUILD_HDCD_EXE_COMPAT == 1)
+        "      \t\t any wav header\n");
+    if (kmode) {
+        fprintf(stderr,
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
         "      \t\t stereo, 44.1kHz (also forces -p)\n"
         "    -a\t\t supress output\n"
-        "    -i\t\t identify HDCD, implies -a -x\n"
-#else
+        "    -i\t\t identify HDCD, implies -a -x, scans the\n"
+        "      \t\t first %d frames (%.0f ms)\n", OPT_KI_SCAN_MAX, (float)(OPT_KI_SCAN_MAX) / 44100 * 1000 );
+    } else {
+        fprintf(stderr,
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
-        "      \t\t stereo, 44.1kHz (with -k, -r also forces -p)\n"
-#endif
-        "\n");
+        "      \t\t stereo, 44.1kHz (with -k, -r also forces -p)\n");
+    }
+    fprintf(stderr, "\n");
 }
 
 int main(int argc, char *argv[]) {
