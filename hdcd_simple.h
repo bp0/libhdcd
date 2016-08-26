@@ -90,7 +90,7 @@ typedef enum {
     SHDCD_ANA_LTGM    = 6, /**< LLE level in each channel at each sample */
 } shdcd_ana_mode;
 
-typedef int hdcd_ana_mode_t; /* shdcd_ana_mode_t was renamed shdcd_ana_mode */
+typedef int shdcd_ana_mode_t; /* shdcd_ana_mode_t was renamed shdcd_ana_mode */
 
 /* HDCD_ANA_*_DESC can be used for 0-4
  * the two extra modes are described here: */
