@@ -34,7 +34,7 @@ libhdcd_la_SOURCES = src/hdcd_decode2.c src/hdcd_simple.c src/hdcd_libversion.c
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libhdcd.pc
 
-libhdcd_la_LDFLAGS = -version-info @HDCD_LIBTOOL_VERSION@
+libhdcd_la_LDFLAGS = -version-info @HDCD_LIBTOOL_VERSION@ -export-symbols-regex "^hdcd_"
 
 LDADD = libhdcd.la
 
