@@ -94,6 +94,12 @@ do_test() {
     rm -f "$TOUT" "$TOUT.md5" "$TOUT.md5.target"
 }
 
+mkmix() {
+    cd test
+    bash ./mkmix.sh
+    cd ..
+}
+
 test_pipes
 
 # format:
@@ -130,6 +136,10 @@ do_test "-qxp" "hdcd-pfa.wav"  "760628f8e3c81e7f7f94fdf594decd61" 0 "pfa-special
 # not happening. HDCD should be "not detected"
 do_test "-qx" "ava16.wav"     "a44fea1a2c825ed24f57f35a328d7874" 1
 
+# tests -n (nop) in mkmix, then tests mixed packet format
+mkmix
+do_test "-qxrp" "hdcd-mix.raw"  "6a3cf7f920f419477ada264cc63b40da" 0 "hdt-nop-cat-mixed-pf"
+
 # analyzer tests
 do_test "-qx -z pe"     "hdcd-all.wav"  "769ce35ba609d6cf90f525db3be6cc92" 0 "analyzer-pe"
 do_test "-qxp -z pe"    "hdcd.wav"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
@@ -141,7 +151,6 @@ do_test "-qx -z tgm"    "hdcd-ftm.wav"  "d4559c4149cb6629ea7a5cde775e380e" 0 "an
 do_test "-qx -z ltgm"   "hdcd-ftm.wav"  "7656237a5f8171d58113b5fe5b718738" 0 "analyzer-lgtm-for-the-masses"
 do_test "-qx -z ltgm"   "ava16.wav"     "5479204e34eeedf714122c314f779c83" 1 "analyzer-lgtm-nch-process-false-positive"
 do_test "-qx -z cdt"    "ava16.wav"     "d54f7e54623b6bfbe78d127e69fefe6e" 1 "analyzer-cdt-nch-process-false-positive"
-
 
 echo "passed: $PASSED / $TESTS"
 echo "exit: $EXIT_CODE"

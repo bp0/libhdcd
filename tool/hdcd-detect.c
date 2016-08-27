@@ -125,11 +125,12 @@ int main(int argc, char *argv[]) {
         opt_ka = 0, opt_ks = 0, opt_kr = 0, opt_ki = 0;
     int opt_help = 0, opt_dump_detect = 0;
     int opt_raw_out = 0, opt_raw_in = 0;
+    int opt_nop = 0;
 
     hdcd_simple *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "acdfhiko:pqrsvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "acdfhikno:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -146,6 +147,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'o':
                 outfile = optarg;
+                break;
+            case 'n':
+                opt_nop = 1;
                 break;
             case 'k':
                 kmode = 1;
@@ -292,7 +296,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
             return 1;
         } else {
-            wav_out = wav_write_open(outfile, 24, opt_raw_out);
+            wav_out = wav_write_open(outfile, (opt_nop ? 16 : 24), opt_raw_out);
             if (!wav_out) return 1;
         }
     }
@@ -343,7 +347,8 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < count * channels; i++)
             process_buf[i] = convert_buf[i];
 
-        hdcd_process(ctx, process_buf, count);
+        if (!opt_nop)
+            hdcd_process(ctx, process_buf, count);
 
         if (outfile) wav_write(wav_out, process_buf, count * channels);
 

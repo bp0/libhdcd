@@ -124,6 +124,8 @@ int wav_write(wavw_t *wav, const int32_t *samples, int count) {
             elw += fwrite_int24el(samples[i], wav->fp);
         else if (wav->bits_per_sample == 32)
             elw += fwrite_int32el(samples[i], wav->fp);
+        else if (wav->bits_per_sample == 16)
+            elw += fwrite_int16el(samples[i], wav->fp);
 
     wav->size += elw;
     return elw;
