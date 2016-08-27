@@ -39,4 +39,4 @@ hdcd-detect
 *.zip
 samp/
 win-bin/
-
+test/hdcd-mix.raw
