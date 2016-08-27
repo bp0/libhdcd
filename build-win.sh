@@ -2,6 +2,7 @@
 
 # build a windows binary package
 
+MAR=i686-w64-mingw32-ar
 MGCC=i686-w64-mingw32-gcc
 MWINDRES=i686-w64-mingw32-windres
 LIBNAME=libhdcd
@@ -9,6 +10,7 @@ LIBNAME=libhdcd
 if [ -z `which zip` ]; then echo "Needs zip"; exit 1; fi
 if [ -z `which unix2dos` ]; then echo "Needs unix2dos"; exit 1; fi
 if [ -z `which perl` ]; then echo "Needs perl"; exit 1; fi
+if [ -z `which "$MAR"` ]; then echo "Needs mingw ar"; exit 1; fi
 if [ -z `which "$MGCC"` ]; then echo "Needs mingw gcc"; exit 1; fi
 if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 
@@ -61,10 +63,11 @@ create_rc "hdcd-detect.res" "hdcd-detect.exe" "VFT_APP" ""
 create_rc "hdcd.res" "hdcd.exe" "VFT_APP" ""
 
 "$MGCC" -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
+"$MAR" crsu $LIBNAME.a hdcd_decode2.o hdcd_libversion.o hdcd_simple.o
 "$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.dll.a
 
 "$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o hdcd.res
+"$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o $LIBNAME.a hdcd.res
 rm -f hdcd-detect.o wavreader.o wavout.o
 rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o
 
