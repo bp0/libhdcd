@@ -25,11 +25,11 @@ DISTCLEANFILES = @DOLT_CLEANFILES@
 EXTRA_DIST =
 
 hdcd_includedir = $(includedir)/hdcd
-hdcd_include_HEADERS = hdcd_simple.h hdcd_libversion.h hdcd_detect.h hdcd_analyze.h
+hdcd_include_HEADERS = src/hdcd_simple.h src/hdcd_libversion.h src/hdcd_detect.h src/hdcd_analyze.h
 
 lib_LTLIBRARIES = libhdcd.la
 
-libhdcd_la_SOURCES = hdcd_decode2.c hdcd_simple.c hdcd_libversion.c
+libhdcd_la_SOURCES = src/hdcd_decode2.c src/hdcd_simple.c src/hdcd_libversion.c
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libhdcd.pc

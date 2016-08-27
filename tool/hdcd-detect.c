@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "../hdcd_simple.h"
+#include "../src/hdcd_simple.h"
 #include "wavreader.h"
 #include "wavout.h"
 

@@ -55,7 +55,7 @@ create_rc "libhdcd.res" "libhdcd.dll"
 create_rc "hdcd-detect.res" "hdcd-detect.exe"
 create_rc "hdcd.res" "hdcd.exe"
 
-"$MGCC" -c ../hdcd_decode2.c ../hdcd_simple.c ../hdcd_libversion.c
+"$MGCC" -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
 "$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.a
 
 "$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c

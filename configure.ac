@@ -21,7 +21,7 @@
 AC_PREREQ([2.53])
 
 AC_INIT([hdcd_decode], [m4_esyscmd([./package_version.sh])])
-AC_CONFIG_SRCDIR([hdcd_decode2.h])
+AC_CONFIG_SRCDIR([src/hdcd_decode2.h])
 AM_INIT_AUTOMAKE([1.6 foreign subdir-objects tar-ustar dist-zip])
 m4_ifdef([AM_SILENT_RULES], [
     AM_SILENT_RULES([yes])
@@ -44,7 +44,7 @@ AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 AC_SEARCH_LIBS([sin], [m], [], [
-  AC_MSG_ERROR([unable to find the cos() function])
+  AC_MSG_ERROR([unable to find the sin() function])
 ])
 
 LT_INIT
