@@ -64,6 +64,7 @@ void hdcd_reset(hdcd_simple *s)
 {
     if (!s) return;
     _hdcd_reset_stereo_ext(&s->state, 44100, 2000, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
+    _hdcd_detect_reset(&s->detect);
     hdcd_smode(s, 1);
     hdcd_analyze_mode(s, 0);
 }
