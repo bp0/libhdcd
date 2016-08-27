@@ -19,17 +19,22 @@ echo "PVER: $PVER -- WVER: $WVER"
 create_rc() {
 RN="$1"
 ON="$2"
+FT="$3"
+FD="$4"
 cat << EOF > "$RN.rc"
+#include <windows.h>
 1 VERSIONINFO
 FILEVERSION     $WVER
 PRODUCTVERSION  $WVER
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        $FT
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "CompanyName", ""
-      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder library"
+      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder$FD"
       VALUE "FileVersion", "$PVER"
       VALUE "InternalName", "libhdcd"
       VALUE "LegalCopyright", "libhdcd AUTHORS"
@@ -51,9 +56,9 @@ EOF
 mkdir -p win-bin
 cd win-bin
 
-create_rc "libhdcd.res" "libhdcd.dll"
-create_rc "hdcd-detect.res" "hdcd-detect.exe"
-create_rc "hdcd.res" "hdcd.exe"
+create_rc "libhdcd.res" "libhdcd.dll" "VFT_DLL" " library"
+create_rc "hdcd-detect.res" "hdcd-detect.exe" "VFT_APP" ""
+create_rc "hdcd.res" "hdcd.exe" "VFT_APP" ""
 
 "$MGCC" -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
 "$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.dll.a
