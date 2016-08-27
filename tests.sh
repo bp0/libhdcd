@@ -37,10 +37,11 @@ test_pipes() {
     "$HDCD_DETECT" -qcrp - <"$TFILE" |"$MD5SUM" >"$TOUT.md5"
     "$HDCD_DETECT" -kqcr <"$TFILE" |"$MD5SUM" >"$TOUT.md5.k"
     sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5"
+    sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5.k"
     echo "$THASH" >"$TOUT.md5.target"
     RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
     RESULTK=$(diff "$TOUT.md5.k" "$TOUT.md5.target")
-    if [ -n "$RESULT" ] && [ -n "$RESULTK" ]; then
+    if [ -n "$RESULT" ] || [ -n "$RESULTK" ]; then
         echo "N: $RESULT"
         echo "K: $RESULTK"
         echo "-- FAILED [md5_result]"
