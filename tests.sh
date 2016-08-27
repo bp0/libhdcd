@@ -25,7 +25,7 @@ PASSED=0
 die_on_fail() {
     EXIT_CODE=$EXIT_CODE # nop in case the next line is commented
     # if prefer die on fail then un-comment the next line
-    exit EXIT_CODE
+    exit $EXIT_CODE
 }
 
 test_pipes() {
@@ -100,6 +100,19 @@ mkmix() {
     cd ..
 }
 
+verify_files() {
+    echo "Verifying test files..."
+    cd test
+    md5sum -c file_sums
+    SR=$?
+    cd ..
+    if ((SR != 0)); then
+        exit 1;
+    fi
+}
+
+verify_files
+
 test_pipes
 
 # format:
@@ -138,7 +151,10 @@ do_test "-qx" "ava16.wav"     "a44fea1a2c825ed24f57f35a328d7874" 1
 
 # tests -n (nop) in mkmix, then tests mixed packet format
 mkmix
-do_test "-qxrp" "hdcd-mix.raw"  "6a3cf7f920f419477ada264cc63b40da" 0 "hdt-nop-cat-mixed-pf"
+do_test "-qxrp"  "hdcd-mix.raw"  "6a3cf7f920f419477ada264cc63b40da" 0 "hdt-nop-cat-mixed-pf"
+
+# another way that "verify files before testing" might have worked
+do_test "-qxrpn" "hdcd.raw"      "ca3ce18c754bd008d7f308c2892cb795" 1 "hdt-nop"
 
 # analyzer tests
 do_test "-qx -z pe"     "hdcd-all.wav"  "769ce35ba609d6cf90f525db3be6cc92" 0 "analyzer-pe"
