@@ -2,13 +2,16 @@
 
 # build a windows binary package
 
+MAR=i686-w64-mingw32-ar
 MGCC=i686-w64-mingw32-gcc
 MWINDRES=i686-w64-mingw32-windres
+CFLAGS="-O2 -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Werror=implicit-function-declaration -Werror=missing-prototypes"
 LIBNAME=libhdcd
 
 if [ -z `which zip` ]; then echo "Needs zip"; exit 1; fi
-if [ -z `which unix2dos` ]; then echo "Needs unix2dos"; exit 1; fi
+if [ -z `which sed` ]; then echo "Needs sed"; exit 1; fi
 if [ -z `which perl` ]; then echo "Needs perl"; exit 1; fi
+if [ -z `which "$MAR"` ]; then echo "Needs mingw ar"; exit 1; fi
 if [ -z `which "$MGCC"` ]; then echo "Needs mingw gcc"; exit 1; fi
 if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 
@@ -19,17 +22,22 @@ echo "PVER: $PVER -- WVER: $WVER"
 create_rc() {
 RN="$1"
 ON="$2"
+FT="$3"
+FD="$4"
 cat << EOF > "$RN.rc"
+#include <windows.h>
 1 VERSIONINFO
 FILEVERSION     $WVER
 PRODUCTVERSION  $WVER
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        $FT
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "CompanyName", ""
-      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder library"
+      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder$FD"
       VALUE "FileVersion", "$PVER"
       VALUE "InternalName", "libhdcd"
       VALUE "LegalCopyright", "libhdcd AUTHORS"
@@ -51,20 +59,21 @@ EOF
 mkdir -p win-bin
 cd win-bin
 
-create_rc "libhdcd.res" "libhdcd.dll"
-create_rc "hdcd-detect.res" "hdcd-detect.exe"
-create_rc "hdcd.res" "hdcd.exe"
+create_rc "libhdcd.res" "libhdcd.dll" "VFT_DLL" " library"
+create_rc "hdcd-detect.res" "hdcd-detect.exe" "VFT_APP" ""
+create_rc "hdcd.res" "hdcd.exe" "VFT_APP" ""
 
-"$MGCC" -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
-"$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.a
+"$MGCC" $CFLAGS -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
+"$MAR" crsu $LIBNAME.a hdcd_decode2.o hdcd_libversion.o hdcd_simple.o
+"$MGCC" -shared -s -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.dll.a
 
-"$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o hdcd_decode2.o  hdcd_libversion.o  hdcd_simple.o hdcd.res
+"$MGCC" $CFLAGS -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" -s -o hdcd.exe hdcd-detect.o wavreader.o wavout.o $LIBNAME.a hdcd.res
 rm -f hdcd-detect.o wavreader.o wavout.o
 rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o
 
-"$MGCC" -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o hdcd-detect.res -L. -l$LIBNAME
+"$MGCC" $CFLAGS -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" -s -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o hdcd-detect.res -L. -l$LIBNAME
 rm -f hdcd-detect.o wavreader.o wavout.o
 
 rm -f "libhdcd.res" "hdcd-detect.res" "hdcd.res"
@@ -93,9 +102,9 @@ cp "hdcd-detect.exe" "$PKN"
 cp "libhdcd.dll" "$PKN"
 cp ../LICENSE "$PKN/LICENSE.txt"
 cp ../AUTHORS "$PKN/AUTHORS.txt"
-unix2dos -o "$PKN/LICENSE.txt"
-unix2dos -o "$PKN/AUTHORS.txt"
-unix2dos -o "$PKN/FILES.txt"
+sed -i -e 's/\r*$/\r/' "$PKN/LICENSE.txt"
+sed -i -e 's/\r*$/\r/' "$PKN/AUTHORS.txt"
+sed -i -e 's/\r*$/\r/' "$PKN/FILES.txt"
 zip "$PKN.zip" "$PKN/hdcd.exe" "$PKN/hdcd-detect.exe" "$PKN/libhdcd.dll" "$PKN/LICENSE.txt" "$PKN/AUTHORS.txt" "$PKN/FILES.txt"
 rm -f "$PKN/hdcd.exe" "$PKN/hdcd-detect.exe" "$PKN/libhdcd.dll" "$PKN/LICENSE.txt" "$PKN/AUTHORS.txt" "$PKN/FILES.txt"
 rmdir "$PKN"
