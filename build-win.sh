@@ -9,7 +9,7 @@ CFLAGS="-O2 -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Werror=impli
 LIBNAME=libhdcd
 
 if [ -z `which zip` ]; then echo "Needs zip"; exit 1; fi
-if [ -z `which unix2dos` ]; then echo "Needs unix2dos"; exit 1; fi
+if [ -z `which sed` ]; then echo "Needs sed"; exit 1; fi
 if [ -z `which perl` ]; then echo "Needs perl"; exit 1; fi
 if [ -z `which "$MAR"` ]; then echo "Needs mingw ar"; exit 1; fi
 if [ -z `which "$MGCC"` ]; then echo "Needs mingw gcc"; exit 1; fi
@@ -102,9 +102,9 @@ cp "hdcd-detect.exe" "$PKN"
 cp "libhdcd.dll" "$PKN"
 cp ../LICENSE "$PKN/LICENSE.txt"
 cp ../AUTHORS "$PKN/AUTHORS.txt"
-unix2dos -o "$PKN/LICENSE.txt"
-unix2dos -o "$PKN/AUTHORS.txt"
-unix2dos -o "$PKN/FILES.txt"
+sed -i -e 's/\r*$/\r/' "$PKN/LICENSE.txt"
+sed -i -e 's/\r*$/\r/' "$PKN/AUTHORS.txt"
+sed -i -e 's/\r*$/\r/' "$PKN/FILES.txt"
 zip "$PKN.zip" "$PKN/hdcd.exe" "$PKN/hdcd-detect.exe" "$PKN/libhdcd.dll" "$PKN/LICENSE.txt" "$PKN/AUTHORS.txt" "$PKN/FILES.txt"
 rm -f "$PKN/hdcd.exe" "$PKN/hdcd-detect.exe" "$PKN/libhdcd.dll" "$PKN/LICENSE.txt" "$PKN/AUTHORS.txt" "$PKN/FILES.txt"
 rmdir "$PKN"
