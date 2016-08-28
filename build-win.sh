@@ -5,6 +5,7 @@
 MAR=i686-w64-mingw32-ar
 MGCC=i686-w64-mingw32-gcc
 MWINDRES=i686-w64-mingw32-windres
+CFLAGS="-O2 -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Werror=implicit-function-declaration -Werror=missing-prototypes"
 LIBNAME=libhdcd
 
 if [ -z `which zip` ]; then echo "Needs zip"; exit 1; fi
@@ -62,16 +63,16 @@ create_rc "libhdcd.res" "libhdcd.dll" "VFT_DLL" " library"
 create_rc "hdcd-detect.res" "hdcd-detect.exe" "VFT_APP" ""
 create_rc "hdcd.res" "hdcd.exe" "VFT_APP" ""
 
-"$MGCC" -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
+"$MGCC" $CFLAGS -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
 "$MAR" crsu $LIBNAME.a hdcd_decode2.o hdcd_libversion.o hdcd_simple.o
 "$MGCC" -shared -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.dll.a
 
-"$MGCC" -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" $CFLAGS -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
 "$MGCC" -o hdcd.exe hdcd-detect.o wavreader.o wavout.o $LIBNAME.a hdcd.res
 rm -f hdcd-detect.o wavreader.o wavout.o
 rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o
 
-"$MGCC" -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
+"$MGCC" $CFLAGS -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
 "$MGCC" -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o hdcd-detect.res -L. -l$LIBNAME
 rm -f hdcd-detect.o wavreader.o wavout.o
 
