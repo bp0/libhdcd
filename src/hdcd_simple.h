@@ -51,17 +51,17 @@ void hdcd_free(hdcd_simple *ctx);
 
 
 /** is HDCD encoding detected? */
-/*hdcd_detection_t*/ int hdcd_detected(hdcd_simple *ctx);
+/*hdcd_dv_t*/ int hdcd_detected(hdcd_simple *ctx);                  /**< see hdcd_dv in hdcd_detect.h */
 /** get a string with an HDCD detection summary */
 void hdcd_detect_str(hdcd_simple *ctx, char *str, int maxlen); /* [256] should be enough */
 /** get individual detection values */
-/*hdcd_pf_t*/ int hdcd_detect_packet_type(hdcd_simple *ctx);
-              int hdcd_detect_total_packets(hdcd_simple *ctx);         /**< valid packets */
-              int hdcd_detect_errors(hdcd_simple *ctx);                /**< detectable errors */
-/*hdcd_pe_t*/ int hdcd_detect_peak_extend(hdcd_simple *ctx);
-              int hdcd_detect_uses_transient_filter(hdcd_simple *ctx);
-              float hdcd_detect_max_gain_adjustment(hdcd_simple *ctx); /**< in dB, expected in the range -7.5 to 0.0 */
-              int hdcd_detect_cdt_expirations(hdcd_simple *ctx);       /**< -1 for never set, 0 for set but never expired */
+/*hdcd_pf*/ int hdcd_detect_packet_type(hdcd_simple *ctx);           /**< see hdcd_pf in hdcd_detect.h */
+            int hdcd_detect_total_packets(hdcd_simple *ctx);         /**< valid packets */
+            int hdcd_detect_errors(hdcd_simple *ctx);                /**< detectable errors */
+/*hdcd_pe*/ int hdcd_detect_peak_extend(hdcd_simple *ctx);           /**< see hdcd_pe in hdcd_detect.h */
+            int hdcd_detect_uses_transient_filter(hdcd_simple *ctx); /**< bool, 1 if the tf flag was detected */
+            float hdcd_detect_max_gain_adjustment(hdcd_simple *ctx); /**< in dB, expected in the range -7.5 to 0.0 */
+            int hdcd_detect_cdt_expirations(hdcd_simple *ctx);       /**< -1 for never set, 0 for set but never expired */
 
 
 /** set a logging callback or use the default (print to stderr) */
