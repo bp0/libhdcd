@@ -43,11 +43,33 @@ Simple API
 
     hdcd_reset(ctx);  /* reset the decoder state */
 
-It is best to shdcd_reset() and then seek a couple seconds behind the target to let the the decoder process samples and catch the nearest packet. The samples leading up to the seek target can then be discarded.
+It is best to hdcd_reset() and then seek a couple seconds behind the target to let the the decoder process samples and catch the nearest packet. The samples leading up to the seek target can then be discarded.
 
 ### Cleanup
 
     hdcd_free(ctx);
+
+### HDCD detection
+
+Detection data is available after a call to hdcd_process().
+
+    hdcd_dv dv;
+    dv = hdcd_detected(ctx);   /* see hdcd_dv in hdcd_detect.h */
+
+    /* get a string with an HDCD detection summary */
+    char dstr[256];
+    hdcd_detect_str(ctx, dstr, sizeof(dstr));
+
+Complete detection stats are available. See hdcd_simple.h and hdcd_detect.h for related functions and types.
+
+    /* get individual detection values */
+    hdcd_pf pf = hdcd_detect_packet_type(ctx);           /* see hdcd_pf in hdcd_detect.h */
+    int packets = int hdcd_detect_total_packets(ctx);    /* valid packets */
+    int errors = hdcd_detect_errors(ctx);                /* detectable errors */
+    hdcd_pe pe = hdcd_detect_peak_extend(ctx);           /* see hdcd_pe in hdcd_detect.h */
+    int tf = hdcd_detect_uses_transient_filter(ctx);     /* bool, 1 if the tf flag was detected */
+    float mga = float hdcd_detect_max_gain_adjustment(ctx); /* in dB, expected in the range -7.5 to 0.0 */
+    int cdt_exp = hdcd_detect_cdt_expirations(ctx);         /* -1 for never set, 0 for set but never expired */
 
 ### Analyze mode
 
@@ -55,5 +77,3 @@ A mode to aid in analysis of HDCD encoded audio. In this mode the audio is repla
 See hdcd_ana_mode in hdcd_analyze.h. See also [HDCD § Analyze mode](http://wiki.hydrogenaud.io/index.php?title=High_Definition_Compatible_Digital#Analyze_mode)
 
     hdcd_analyze_mode(MODE);
-
-
