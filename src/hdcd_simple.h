@@ -51,7 +51,7 @@ void hdcd_free(hdcd_simple *ctx);
 
 
 /** is HDCD encoding detected? */
-/*hdcd_dv_t*/ int hdcd_detected(hdcd_simple *ctx);                  /**< see hdcd_dv in hdcd_detect.h */
+/*hdcd_dv*/ int hdcd_detected(hdcd_simple *ctx);                  /**< see hdcd_dv in hdcd_detect.h */
 /** get a string with an HDCD detection summary */
 void hdcd_detect_str(hdcd_simple *ctx, char *str, int maxlen); /* [256] should be enough */
 /** get individual detection values */

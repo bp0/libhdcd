@@ -91,14 +91,14 @@ void hdcd_free(hdcd_simple *s)
 }
 
 /** Is HDCD encoding detected? */
-/*hdcd_detection_t*/
+/*hdcd_dv*/
 int hdcd_detected(hdcd_simple *s)
 {
     if (!s) return 0;
     return s->detect.hdcd_detected;
 }
 
-/*hdcd_pf_t*/
+/*hdcd_pf*/
 int hdcd_detect_packet_type(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.packet_type; else return 0; }
 
@@ -108,7 +108,7 @@ int hdcd_detect_total_packets(hdcd_simple *ctx)
 int hdcd_detect_errors(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.errors; else return 0; }
 
-/*hdcd_pe_t*/
+/*hdcd_pe*/
 int hdcd_detect_peak_extend(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.peak_extend; else return 0; }
 
@@ -163,21 +163,21 @@ int hdcd_analyze_mode(hdcd_simple *s, int mode)
     s->state.channel[1].decoder_options &= ~HDCD_FLAG_FORCE_PE;
 
     switch(mode) {
-        case HDCD_ANA_OFF:     /* identical to r_HDCD_ANA_OFF */
-        case HDCD_ANA_LLE:     /* identical to r_HDCD_ANA_LLE */
-        case HDCD_ANA_PE:      /* identical to r_HDCD_ANA_PE  */
-        case HDCD_ANA_CDT:     /* identical to r_HDCD_ANA_CDT */
-        case HDCD_ANA_TGM:     /* identical to r_HDCD_ANA_TGM */
+        case HDCD_ANA_OFF:
+        case HDCD_ANA_LLE:
+        case HDCD_ANA_PE:
+        case HDCD_ANA_CDT:
+        case HDCD_ANA_TGM:
             hdcd_smode(s, 1);
             _hdcd_set_analyze_mode_stereo(&s->state, mode);
             return 1;
-        case HDCD_ANA_PEL:     /* r_HDCD_ANA_PE + HDCD_FLAG_FORCE_PE */
+        case HDCD_ANA_PEL:     /* HDCD_ANA_PE + HDCD_FLAG_FORCE_PE */
             hdcd_smode(s, 1);
             s->state.channel[0].decoder_options |= HDCD_FLAG_FORCE_PE;
             s->state.channel[1].decoder_options |= HDCD_FLAG_FORCE_PE;
             _hdcd_set_analyze_mode_stereo(&s->state, HDCD_ANA_PE);
             return 1;
-        case HDCD_ANA_LTGM:   /* r_HDCD_ANA_LLE + stereo_mode off */
+        case HDCD_ANA_LTGM:   /* HDCD_ANA_LLE + stereo_mode off */
             hdcd_smode(s, 0);
             _hdcd_set_analyze_mode_stereo(&s->state, HDCD_ANA_LLE);
             return 1;
