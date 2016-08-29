@@ -49,6 +49,9 @@ case $1 in
     -winh)
         printf '%s' "$CURRENT.$REVISION"
     ;;
+    -major)
+        printf '%s' "$CURRENT"
+    ;;
     *)
         printf '%s' "$CURRENT.$REVISION.$AGE"
     ;;
