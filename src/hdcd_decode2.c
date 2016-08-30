@@ -828,6 +828,9 @@ static const int32_t gaintab[] = {
 /** tone generator: sample_number, frequency, sample_rate, amplitude */
 #define TONEGEN16(sn, f, sr, a) (int16_t)(sin((6.28318530718 * (sn) * (f)) /(sr)) * (a) * 0x7fff)
 
+/** used in _hdcd_scan_x() and _hdcd_integrate_x() */
+#define HDCD_MAX_CHANNELS 2
+
 /** internal data structure identities **/
 enum {
     HDCD_SID_UNDEF           = 0,
@@ -844,7 +847,7 @@ static void _hdcd_default_logger(void *ignored, const char* fmt, va_list args) {
     ignored = ignored;
 }
 
-int _hdcd_log_init_ext(hdcd_log *log, hdcd_log_callback func, void *priv) {
+int _hdcd_log_init(hdcd_log *log, hdcd_log_callback func, void *priv) {
     if (!log) return -1;
     memset(log, 0, sizeof(*log));
     log->sid = HDCD_SID_LOGGER;
@@ -855,9 +858,6 @@ int _hdcd_log_init_ext(hdcd_log *log, hdcd_log_callback func, void *priv) {
         log->log_func = (hdcd_log_callback)_hdcd_default_logger;
     log->enable = 1;
     return 0;
-}
-int _hdcd_log_init(hdcd_log *log) {
-    return _hdcd_log_init_ext(log, NULL, NULL);
 }
 void _hdcd_log_enable(hdcd_log *log) { if (log) log->enable = 1; }
 void _hdcd_log_disable(hdcd_log *log) { if (log) log->enable = 0; }
@@ -951,15 +951,6 @@ void _hdcd_attach_logger_stereo(hdcd_state_stereo *state, hdcd_log *log) {
     state->channel[1].log = log;
 }
 
-/* update the user info/counters */
-static void _hdcd_update_info(hdcd_state *state)
-{
-    if (state->control & 16) state->count_peak_extend++;
-    if (state->control & 32) state->count_transient_filter++;
-    state->gain_counts[state->control & 15]++;
-    state->max_gain = FFMAX(state->max_gain, (state->control & 15));
-}
-
 typedef enum {
     HDCD_CODE_NONE=0,
     HDCD_CODE_A,
@@ -999,135 +990,79 @@ static hdcd_code_result _hdcd_code(const uint32_t bits, unsigned char *code)
     return HDCD_CODE_NONE;
 }
 
-static int _hdcd_integrate(hdcd_state *state, int *flag, const int32_t *samples, int count, int stride)
+static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const int32_t *samples, int count, int stride)
 {
-    uint32_t bits = 0;
-    int result = FFMIN(state->readahead, count);
-    int i;
+    uint32_t bits[HDCD_MAX_CHANNELS];
+    int result = count;
+    int i, j;
     *flag = 0;
 
-    for (i = result - 1; i >= 0; i--) {
-        bits |= (*samples & 1) << i; /* might be better as a conditional? */
-        samples += stride;
+    memset(bits, 0, sizeof(bits));
+    if (stride < channels) stride = channels;
+
+    for (i = 0; i < channels; i++)
+        result = FFMIN(states[i].readahead, result);
+
+    for (j = result - 1; j >= 0; j--) {
+        for (i = 0; i < channels; i++)
+            bits[i] |= (*(samples++) & 1) << j;
+        samples += stride - channels;
     }
 
-    state->window = (state->window << result) | bits;
-    state->readahead -= result;
-    if (state->readahead > 0)
-        return result;
+    for (i = 0; i < channels; i++) {
+        states[i].window = (states[i].window << result) | bits[i];
+        states[i].readahead -= result;
 
-    bits = (state->window ^ state->window >> 5 ^ state->window >> 23);
-
-    if (state->arg) {
-        switch (_hdcd_code(bits, &state->control)) {
-            case HDCD_CODE_A:
-                *flag = 1;
-                state->code_counterA++;
-                break;
-            case HDCD_CODE_B:
-                *flag = 1;
-                state->code_counterB++;
-                break;
-            case HDCD_CODE_A_ALMOST:
-                state->code_counterA_almost++;
-                _hdcd_log(state->log,
-                    "hdcd error: Control A almost: 0x%02x near %d\n", bits & 0xff, state->sample_count);
-                break;
-            case HDCD_CODE_B_CHECKFAIL:
-                state->code_counterB_checkfails++;
-                _hdcd_log(state->log,
-                    "hdcd error: Control B check failed: 0x%04x (0x%02x vs 0x%02x) near %d\n", bits & 0xffff, (bits & 0xff00) >> 8, ~bits & 0xff, state->sample_count);
-                break;
-            case HDCD_CODE_NONE:
-                state->code_counterC_unmatched++;
-                _hdcd_log(state->log,
-                    "hdcd error: Unmatched code: 0x%08x near %d\n", bits, state->sample_count);
-            case HDCD_CODE_EXPECT_A:
-            case HDCD_CODE_EXPECT_B:
-                /* not used here, but fix -Wswitch */
-                break;
-        }
-        if (*flag) _hdcd_update_info(state);
-        state->arg = 0;
-    }
-    if (bits == 0x7e0fa005 || bits == 0x7e0fa006) {
-        /* 0x7e0fa00[.]-> [0b0101 or 0b0110] */
-        state->readahead = (bits & 3) * 8;
-        state->arg = 1;
-        state->code_counterC++;
-    } else {
-        if (bits)
-            state->readahead = readaheadtab[bits & 0xff];
-        else
-            state->readahead = 31; /* ffwd over digisilence */
-    }
-    return result;
-}
-
-static int _hdcd_integrate_stereo(hdcd_state_stereo *state, int *flag, const int32_t *samples, int count)
-{
-    uint32_t bits[2] = {0, 0};
-    int result;
-    int i;
-    *flag = 0;
-
-    /* result = min(count, s0ra, s1ra) */
-    result = FFMIN(state->channel[0].readahead, count);
-    result = FFMIN(state->channel[1].readahead, result);
-
-    for (i = result - 1; i >= 0; i--) {
-        bits[0] |= (*(samples++) & 1) << i;
-        bits[1] |= (*(samples++) & 1) << i;
-    }
-
-    for (i = 0; i < 2; i++) {
-        state->channel[i].window = (state->channel[i].window << result) | bits[i];
-        state->channel[i].readahead -= result;
-
-        if (state->channel[i].readahead == 0) {
-            uint32_t wbits = (state->channel[i].window ^ state->channel[i].window >> 5 ^ state->channel[i].window >> 23);
-            if (state->channel[i].arg) {
-                switch (_hdcd_code(wbits, &state->channel[i].control)) {
+        if (states[i].readahead == 0) {
+            uint32_t wbits = (states[i].window ^ states[i].window >> 5 ^ states[i].window >> 23);
+            if (states[i].arg) {
+                switch (_hdcd_code(wbits, &states[i].control)) {
                     case HDCD_CODE_A:
                         *flag |= i+1;
-                        state->channel[i].code_counterA++;
+                        states[i].code_counterA++;
                         break;
                     case HDCD_CODE_B:
                         *flag |= i+1;
-                        state->channel[i].code_counterB++;
+                        states[i].code_counterB++;
                         break;
                     case HDCD_CODE_A_ALMOST:
-                        state->channel[i].code_counterA_almost++;
-                        _hdcd_log(state->channel[i].log,
-                            "hdcd error: Control A almost: 0x%02x near %d\n", wbits & 0xff, state->channel[i].sample_count);
+                        states[i].code_counterA_almost++;
+                        _hdcd_log(states[i].log,
+                            "hdcd error: Control A almost: 0x%02x near %d\n", wbits & 0xff, states[i].sample_count);
                         break;
                     case HDCD_CODE_B_CHECKFAIL:
-                        state->channel[i].code_counterB_checkfails++;
-                        _hdcd_log(state->channel[i].log,
-                            "hdcd error: Control B check failed: 0x%04x (0x%02x vs 0x%02x) near %d\n", wbits & 0xffff, (wbits & 0xff00) >> 8, ~wbits & 0xff, state->channel[i].sample_count);
+                        states[i].code_counterB_checkfails++;
+                        _hdcd_log(states[i].log,
+                            "hdcd error: Control B check failed: 0x%04x (0x%02x vs 0x%02x) near %d\n", wbits & 0xffff, (wbits & 0xff00) >> 8, ~wbits & 0xff, states[i].sample_count);
                         break;
                     case HDCD_CODE_NONE:
-                        state->channel[i].code_counterC_unmatched++;
-                        _hdcd_log(state->channel[i].log,
-                            "hdcd error: Unmatched code: 0x%08x near %d\n", wbits, state->channel[i].sample_count);
+                        states[i].code_counterC_unmatched++;
+                        _hdcd_log(states[i].log,
+                            "hdcd error: Unmatched code: 0x%08x near %d\n", wbits, states[i].sample_count);
                     case HDCD_CODE_EXPECT_A:
                     case HDCD_CODE_EXPECT_B:
                         /* not used here, but fix -Wswitch */
                         break;
                 }
-                if (*flag&(i+1)) _hdcd_update_info(&state->channel[i]);
-                state->channel[i].arg = 0;
+                if (*flag&(i+1)) {
+                    /* update counters */
+                    if (states[i].control & 16) states[i].count_peak_extend++;
+                    if (states[i].control & 32) states[i].count_transient_filter++;
+                    states[i].gain_counts[states[i].control & 15]++;
+                    states[i].max_gain = FFMAX(states[i].max_gain, (states[i].control & 15));
+                }
+                states[i].arg = 0;
             }
             if (wbits == 0x7e0fa005 || wbits == 0x7e0fa006) {
                 /* 0x7e0fa00[.]-> [0b0101 or 0b0110] */
-                state->channel[i].readahead = (wbits & 3) * 8;
-                state->channel[i].arg = 1;
-                state->channel[i].code_counterC++;
+                states[i].readahead = (wbits & 3) * 8;
+                states[i].arg = 1;
+                states[i].code_counterC++;
             } else {
                 if (wbits)
-                    state->channel[i].readahead = readaheadtab[wbits & 0xff];
+                    states[i].readahead = readaheadtab[wbits & 0xff];
                 else
-                    state->channel[i].readahead = 31; /* ffwd over digisilence */
+                    states[i].readahead = 31; /* ffwd over digisilence */
             }
         }
     }
@@ -1143,75 +1078,45 @@ static void _hdcd_sustain_reset(hdcd_state *state)
         state->count_sustain_expired = 0;
 }
 
-static int _hdcd_scan(hdcd_state *state, const int32_t *samples, int max, int stride)
+static int _hdcd_scan_x(hdcd_state *states, int channels, const int32_t *samples, int max, int stride)
 {
     int result;
-    int cdt_active = 0;
-    /* code detect timer */
-    if (state->sustain > 0) {
-        cdt_active = 1;
-        if (state->sustain <= (unsigned)max) {
-            state->control = 0;
-            max = state->sustain;
+    int i;
+    int cdt_active[HDCD_MAX_CHANNELS];
+    memset(cdt_active, 0, sizeof(cdt_active));
+
+    if (stride < channels) stride = channels;
+
+    /* code detect timers for each channel */
+    for(i = 0; i < channels; i++) {
+        if (states[i].sustain > 0) {
+            cdt_active[i] = 1;
+            if (states[i].sustain <=  (unsigned)max) {
+                states[i].control = 0;
+                max = states[i].sustain;
+            }
+            states[i].sustain -= max;
         }
-        state->sustain -= max;
     }
 
     result = 0;
     while (result < max) {
         int flag;
-        int consumed = _hdcd_integrate(state, &flag, samples, max - result, stride);
+        int consumed = _hdcd_integrate_x(states, channels, &flag, samples, max - result, stride);
         result += consumed;
-        if (flag > 0) {
-            /* reset timer if code detected in channel */
-            _hdcd_sustain_reset(state);
+        if (flag) {
+            /* reset timer if code detected in a channel */
+            for(i = 0; i < channels; i++)
+                if (flag & (1<<i)) _hdcd_sustain_reset(&states[i]);
             break;
         }
         samples += consumed * stride;
     }
-    /* code detect timer expired */
-    if (cdt_active && state->sustain == 0)
-        state->count_sustain_expired++;
 
-    return result;
-}
-
-static int _hdcd_scan_stereo(hdcd_state_stereo *state, const int32_t *samples, int max)
-{
-    int result;
-    int i;
-    int cdt_active[2] = {0, 0};
-
-    /* code detect timers for each channel */
-    for(i=0; i<2; i++) {
-        if (state->channel[i].sustain > 0) {
-            cdt_active[i] = 1;
-            if (state->channel[i].sustain <=  (unsigned)max) {
-                state->channel[i].control = 0;
-                max = state->channel[i].sustain;
-            }
-            state->channel[i].sustain -= max;
-        }
-    }
-
-    result = 0;
-    while (result < max) {
-        int flag;
-        int consumed = _hdcd_integrate_stereo(state, &flag, samples, max - result);
-        result += consumed;
-        if (flag) {
-            /* reset timer if code detected in a channel */
-            if (flag & 1) _hdcd_sustain_reset(&state->channel[0]);
-            if (flag & 2) _hdcd_sustain_reset(&state->channel[1]);
-            break;
-        }
-        samples += consumed * 2;
-    }
-
-    for(i=0; i<2; i++) {
+    for(i = 0; i < channels; i++) {
         /* code detect timer expired */
-        if (cdt_active[i] && state->channel[i].sustain == 0)
-            state->channel[i].count_sustain_expired++;
+        if (cdt_active[i] && states[i].sustain == 0)
+            states[i].count_sustain_expired++;
     }
 
     return result;
@@ -1409,7 +1314,7 @@ void _hdcd_process(hdcd_state *state, int32_t *samples, int count, int stride)
         int envelope_run;
         int run;
 
-        run = _hdcd_scan(state, samples + lead * stride, count - lead, stride) + lead;
+        run = _hdcd_scan_x(state, 1, samples + lead * stride, count - lead, stride) + lead;
         envelope_run = run - 1;
 
         if (state->ana_mode)
@@ -1451,7 +1356,7 @@ void _hdcd_process_stereo(hdcd_state_stereo *state, int32_t *samples, int count)
     while (count > lead) {
         int envelope_run, run;
 
-        run = _hdcd_scan_stereo(state, samples + lead * stride, count - lead) + lead;
+        run = _hdcd_scan_x(&state->channel[0], 2, samples + lead * stride, count - lead, 0) + lead;
         envelope_run = run - 1;
 
         if (state->ana_mode) {
@@ -1610,17 +1515,56 @@ void _hdcd_detect_str(hdcd_detection_data *detect, char *str, int maxlen) {
         strcpy(str, "HDCD detected: no");
 }
 
-void _hdcd_dump_state_to_log(hdcd_state *state, int channel) {
+void _hdcd_dump_state_to_log(hdcd_state *state, int channel)
+{
     int j;
-    char chantag[128] = "";
+    char ctag[20] = "";
     if (!state) return;
 
     if (channel >= 0)
-        snprintf(chantag, sizeof(chantag), "Channel %d: ", channel);
+        snprintf(ctag, sizeof(ctag), ".channel%d", channel);
 
-    _hdcd_log(state->log, "%s""counter A: %d, B: %d, C: %d\n", chantag,
+    _hdcd_log(state->log,
+        "%s.code_counterA: %d\n"
+        "%s.code_counterA_almost: %d\n"
+        "%s.code_counterB: %d\n"
+        "%s.code_counterB_checkfails: %d\n"
+        "%s.code_counterC: %d\n"
+        "%s.code_counterC_unmatched: %d\n"
+        "%s.count_peak_extend: %d\n"
+        "%s.count_transient_filter: %d\n"
+        "%s.count_sustain_expired: %d\n"
+        "%s.max_gain: [%02d] %0.1f dB\n",
+        ctag, state->code_counterA,
+        ctag, state->code_counterA_almost,
+        ctag, state->code_counterB,
+        ctag, state->code_counterB_checkfails,
+        ctag, state->code_counterC,
+        ctag, state->code_counterC_unmatched,
+        ctag, state->count_peak_extend,
+        ctag, state->count_transient_filter,
+        ctag, state->count_sustain_expired,
+        ctag, state->max_gain, GAINTOFLOAT(state->max_gain) );
+
+    for (j = 0; j <= state->max_gain; j++)
+        _hdcd_log(state->log,
+            "%s.tg[%02d] %0.1f dB: %d\n",
+             ctag, j, GAINTOFLOAT(j), state->gain_counts[j] );
+
+}
+
+void _hdcd_dump_state_to_log_ffmpeg(hdcd_state *state, int channel)
+{
+    int j;
+    char ctag[20] = "";
+    if (!state) return;
+
+    if (channel >= 0)
+        snprintf(ctag, sizeof(ctag), "Channel %d: ", channel);
+
+    _hdcd_log(state->log, "%s""counter A: %d, B: %d, C: %d\n", ctag,
         state->code_counterA, state->code_counterB, state->code_counterC);
-    _hdcd_log(state->log, "%s""pe: %d, tf: %d, almost_A: %d, checkfail_B: %d, unmatched_C: %d, cdt_expired: %d\n", chantag,
+    _hdcd_log(state->log, "%s""pe: %d, tf: %d, almost_A: %d, checkfail_B: %d, unmatched_C: %d, cdt_expired: %d\n", ctag,
         state->count_peak_extend,
         state->count_transient_filter,
         state->code_counterA_almost,
@@ -1628,6 +1572,6 @@ void _hdcd_dump_state_to_log(hdcd_state *state, int channel) {
         state->code_counterC_unmatched,
         state->count_sustain_expired);
     for (j = 0; j <= state->max_gain; j++)
-        _hdcd_log(state->log, "%s""tg %0.1f: %d\n", chantag, GAINTOFLOAT(j), state->gain_counts[j]);
+        _hdcd_log(state->log, "%s""tg %0.1f: %d\n", ctag, GAINTOFLOAT(j), state->gain_counts[j]);
 
 }

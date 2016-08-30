@@ -65,8 +65,7 @@ typedef struct {
     hdcd_log_callback log_func;
 } hdcd_log;
 
-int _hdcd_log_init(hdcd_log *log);
-int _hdcd_log_init_ext(hdcd_log *log, hdcd_log_callback func, void *priv);
+int _hdcd_log_init(hdcd_log *log, hdcd_log_callback func, void *priv);
 void _hdcd_log(hdcd_log *log, const char* fmt, ...);
 void _hdcd_log_enable(hdcd_log *log);
 void _hdcd_log_disable(hdcd_log *log);
@@ -172,8 +171,10 @@ void _hdcd_detect_stereo(hdcd_state_stereo *state, hdcd_detection_data *detect);
 /* get a string with an HDCD detection summary */
 void _hdcd_detect_str(hdcd_detection_data *detect, char *str, int maxlen); /* [256] should be enough */
 
-/* dump the hdcd_state struct to a the log */
+/* dump the hdcd_state struct to the log */
 void _hdcd_dump_state_to_log(hdcd_state *state, int channel);
+/* ... in the ffmpeg af_hdcd style */
+void _hdcd_dump_state_to_log_ffmpeg(hdcd_state *state, int channel);
 
 #ifdef __cplusplus
 }

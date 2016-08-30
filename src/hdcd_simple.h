@@ -74,6 +74,7 @@ typedef void (*hdcd_log_callback)(const void *priv, const char* fmt, va_list arg
 int hdcd_logger_attach(hdcd_simple *ctx, hdcd_log_callback func, void *priv);
 void hdcd_logger_default(hdcd_simple *ctx);
 void hdcd_logger_detach(hdcd_simple *ctx);
+void hdcd_logger_dump_state(hdcd_simple *s);
 
 
 /** set the analyze mode */

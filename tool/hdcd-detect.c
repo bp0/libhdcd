@@ -376,6 +376,7 @@ int main(int argc, char *argv[]) {
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     if (!opt_quiet) {
         if (opt_dump_detect) {
+            hdcd_logger_dump_state(ctx);
             int det = hdcd_detected(ctx);
             int pf = hdcd_detect_packet_type(ctx);
             int pe = hdcd_detect_peak_extend(ctx);

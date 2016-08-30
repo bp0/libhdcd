@@ -206,7 +206,7 @@ int hdcd_logger_attach(hdcd_simple *s, hdcd_log_callback func, void *priv)
 {
     if (!s) return 0;
     if (!func) return 0;
-    _hdcd_log_init_ext(&s->logger, func, priv);
+    _hdcd_log_init(&s->logger, func, priv);
     _hdcd_attach_logger_stereo(&s->state, &s->logger);
     return 1;
 }
@@ -214,7 +214,7 @@ int hdcd_logger_attach(hdcd_simple *s, hdcd_log_callback func, void *priv)
 void hdcd_logger_default(hdcd_simple *s)
 {
     if (!s) return;
-    _hdcd_log_init_ext(&s->logger, NULL, NULL);
+    _hdcd_log_init(&s->logger, NULL, NULL);
     _hdcd_attach_logger_stereo(&s->state, &s->logger);
 }
 
@@ -222,7 +222,7 @@ void hdcd_logger_detach(hdcd_simple *s)
 {
     if (!s) return;
     /* just reset to the default and then disable */
-    _hdcd_log_init_ext(&s->logger, NULL, NULL);
+    _hdcd_log_init(&s->logger, NULL, NULL);
     _hdcd_attach_logger_stereo(&s->state, &s->logger);
     _hdcd_log_disable(&s->logger);
 }
@@ -272,4 +272,13 @@ const char* hdcd_str_analyze_mode_desc(hdcd_ana_mode mode)
     };
     if (mode < 0 || mode > 6) return "";
     return ana_mode_str[mode];
+}
+
+void hdcd_logger_dump_state(hdcd_simple *s)
+{
+    int i;
+    if (!s) return;
+
+    for(i = 0; i < 2; i++)
+        _hdcd_dump_state_to_log(&s->state.channel[i], i);
 }
