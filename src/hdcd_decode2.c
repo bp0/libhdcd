@@ -967,7 +967,7 @@ static hdcd_code_result _hdcd_code(const uint32_t bits, unsigned char *code)
         /* A: 8-bit code  0x7e0fa005[..] */
         if ((bits & 0xc8) == 0) {
             /*                   [..pt gggg]
-             * 0x0fa005[..] -> 0b[00.. 0...], gain part doubled */
+             * 0x0fa005[..] -> 0b[00.. 0...], gain part doubled (shifted left 1) */
             *code = (bits & 255) + (bits & 7);
             return HDCD_CODE_A;
         } else
