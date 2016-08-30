@@ -114,6 +114,7 @@ int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
 {
     hdcd_state_stereo st;
     hdcd_detection_data d;
+    int buf_size = sizeof(int) * count * 2;
     int *samp;
     if (!s) return 0;
     /* The simplest way to do this is to copy everything and process.
@@ -129,11 +130,11 @@ int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
     }
     if (d.hdcd_detected == HDCD_EFFECTUAL) return
         d.hdcd_detected; /* easy peasy */
-    samp = malloc(sizeof(*samples));
+    samp = malloc(buf_size);
     if (samp) {
-        memcpy(samp, samples, sizeof(*samp));
-        _hdcd_check_samples(s, samples, count);
-        _hdcd_process_stereo(&st, samples, count);
+        memcpy(samp, samples, buf_size);
+        _hdcd_check_samples(s, samp, count);
+        _hdcd_process_stereo(&st, samp, count);
         _hdcd_detect_stereo(&st, &d);
         free(samp);
         return d.hdcd_detected;
