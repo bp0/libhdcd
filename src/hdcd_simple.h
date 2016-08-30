@@ -49,6 +49,10 @@ void hdcd_reset(hdcd_simple *ctx);
 /** free the context when finished */
 void hdcd_free(hdcd_simple *ctx);
 
+/** as hdcd_process(), but only scan. samples remain unprocessed.
+ *  return expected value of hdcd_detected() after processing */
+/*hdcd_dv*/
+int hdcd_scan(hdcd_simple *ctx, int *samples, int count, int ignore_state);
 
 /** is HDCD encoding detected? */
 /*hdcd_dv*/ int hdcd_detected(hdcd_simple *ctx);                  /**< see hdcd_dv in hdcd_detect.h */

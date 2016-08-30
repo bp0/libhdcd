@@ -59,20 +59,45 @@ hdcd_simple *hdcd_new(void)
     return s;
 }
 
+static void _hdcd_simple_reset(hdcd_state_stereo *state)
+{
+    if (!state) return;
+    _hdcd_reset_stereo_ext(state, 44100, 2000, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
+}
+
 /** on a song change or something, reset the decoding state */
 void hdcd_reset(hdcd_simple *s)
 {
     if (!s) return;
-    _hdcd_reset_stereo_ext(&s->state, 44100, 2000, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
+    _hdcd_simple_reset(&s->state);
     _hdcd_detect_reset(&s->detect);
     hdcd_smode(s, 1);
     hdcd_analyze_mode(s, 0);
+}
+
+static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count) {
+    int i, top = 0, bottom = 0;
+    if (!s) return;
+
+    /* check if the samples were already converted to s32 */
+    for (i = 0; i < count * 2; i++) {
+        if (samples[i] > 32767 || samples[i] < -32768) top++;
+        if (samples[i] & 0x0000ffff) bottom++;
+    }
+    if (top) {
+        _hdcd_log(&s->logger, "hdcd: s32 samples detected as input, shifting to s16. (%d:%d)\n", top, bottom);
+        for (i = 0; i < count * 2; i++)
+            samples[i] >>= 16;
+    }
 }
 
 /** process signed 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz */
 void hdcd_process(hdcd_simple *s, int *samples, int count)
 {
     if (!s) return;
+
+    _hdcd_check_samples(s, samples, count);
+
     if (s->smode)
         /* process stereo channels together */
         _hdcd_process_stereo(&s->state, samples, count);
@@ -82,6 +107,54 @@ void hdcd_process(hdcd_simple *s, int *samples, int count)
         _hdcd_process(&s->state.channel[1], samples + 1, count, 2);
     }
     _hdcd_detect_stereo(&s->state, &s->detect);
+}
+
+/*hdcd_dv*/
+int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
+{
+    hdcd_state_stereo st;
+    hdcd_detection_data d;
+    int *samp;
+    if (!s) return 0;
+    /* The simplest way to do this is to copy everything and process.
+     * Perhaps later, a more efficient way can be implemented using
+     * calls to _hdcd_scan_stereo() until the first effectual packet
+     * is found */
+    if (ignore_state) {
+        _hdcd_simple_reset(&st);
+        _hdcd_detect_reset(&d);
+    } else {
+        memcpy(&st, &s->state, sizeof(hdcd_state_stereo));
+        memcpy(&d, &s->detect, sizeof(hdcd_detection_data));
+    }
+    if (d.hdcd_detected == HDCD_EFFECTUAL) return
+        d.hdcd_detected; /* easy peasy */
+    samp = malloc(sizeof(*samples));
+    if (samp) {
+        memcpy(samp, samples, sizeof(*samp));
+        _hdcd_check_samples(s, samples, count);
+        _hdcd_process_stereo(&st, samples, count);
+        _hdcd_detect_stereo(&st, &d);
+        free(samp);
+        return d.hdcd_detected;
+    } else return 0;
+
+    /* possible alternate method:
+    *samp = samples;
+    int c = count;
+    while (c) {
+        c -= _hdcd_scan_stereo(&st, samp_scan, c);
+        if (st.channel[0].count_peak_extend
+            || st.channel[1].count_peak_extend
+            || st.channel[0].max_gain
+            || st.channel[1].max_gain)
+            return HDCD_EFFECTUAL;
+    }
+    if (packets)
+        return HDCD_NO_EFFECT;
+    else
+        return HDCD_NONE;
+    */
 }
 
 /** free the context when finished */
