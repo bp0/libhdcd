@@ -37,7 +37,16 @@ Simple API
 
 ### Each frame
 
-    hdcd_process(ctx, samples, count);
+    /* copy s16 samples into int32_t
+     * example:
+     *
+     * int32_t samples[nb_samples * channels];
+     * for (i = 0; i < nb_samples * channels; i++)
+     *     samples[i] = s16_samples[i];
+     */
+
+    /* process will expand s16 into s32 */
+    hdcd_process(ctx, samples, nb_samples);
 
 ### Song change, seek, etc.
 
