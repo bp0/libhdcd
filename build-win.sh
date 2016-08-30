@@ -9,6 +9,8 @@ CFLAGS="-O2 -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Werror=impli
 LIBNAME=libhdcd
 
 if [ -z `which zip` ]; then echo "Needs zip"; exit 1; fi
+if [ -z `which awk` ]; then echo "Needs awk"; exit 1; fi
+if [ -z `which egrep` ]; then echo "Needs egrep"; exit 1; fi
 if [ -z `which sed` ]; then echo "Needs sed"; exit 1; fi
 if [ -z `which perl` ]; then echo "Needs perl"; exit 1; fi
 if [ -z `which "$MAR"` ]; then echo "Needs mingw ar"; exit 1; fi
@@ -17,28 +19,41 @@ if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 
 PVER=$(./package_version.sh)
 WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+|)/) ? "$1,$2,".($3||0).",0" : "0,0,0,0")}')
-echo "PVER: $PVER -- WVER: $WVER"
+LVER=$(./abi_version.sh -winh)
+DLLVER=$(./abi_version.sh -win)
+MVER=$(./abi_version.sh -major)
+echo "Package version: $PVER -- exe version: $WVER"
+echo "Library version: $LVER -- dll version: $DLLVER"
 
 create_rc() {
 RN="$1"
 ON="$2"
-FT="$3"
-FD="$4"
+PP="$3"
 cat << EOF > "$RN.rc"
 #include <windows.h>
 1 VERSIONINFO
+#ifdef DLL
+FILEVERSION     $DLLVER
+FILETYPE        VFT_DLL
+#else
 FILEVERSION     $WVER
+FILETYPE        VFT_APP
+#endif
 PRODUCTVERSION  $WVER
 FILEOS          VOS_NT_WINDOWS32
-FILETYPE        $FT
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "CompanyName", ""
-      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder$FD"
+#ifdef DLL
+      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder library"
+      VALUE "FileVersion", "$LVER"
+#else
+      VALUE "FileDescription", "High Definition Compatible Digitial (HDCD) decoder"
       VALUE "FileVersion", "$PVER"
+#endif
       VALUE "InternalName", "libhdcd"
       VALUE "LegalCopyright", "libhdcd AUTHORS"
       VALUE "OriginalFilename", "$ON"
@@ -53,19 +68,29 @@ BEGIN
   END
 END
 EOF
-"$MWINDRES" "$RN.rc" -O coff -o "$RN"
+"$MWINDRES" "$PP" "$RN.rc" -O coff -o "$RN"
 }
 
 mkdir -p win-bin
 cd win-bin
 
-create_rc "libhdcd.res" "libhdcd.dll" "VFT_DLL" " library"
-create_rc "hdcd-detect.res" "hdcd-detect.exe" "VFT_APP" ""
-create_rc "hdcd.res" "hdcd.exe" "VFT_APP" ""
+create_rc "libhdcd.res" "libhdcd.dll" "-DDLL"
+create_rc "hdcd-detect.res" "hdcd-detect.exe" "-UDLL"
+create_rc "hdcd.res" "hdcd.exe" "-UDLL"
+
+cat << EOF > "libhdcd.ver"
+LIBHDCD_$MVER {
+    global:
+        hdcd_*;
+    local:
+        *;
+};
+EOF
 
 "$MGCC" $CFLAGS -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
 "$MAR" crsu $LIBNAME.a hdcd_decode2.o hdcd_libversion.o hdcd_simple.o
-"$MGCC" -shared -s -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res -Wl,--out-implib,$LIBNAME.dll.a
+"$MGCC" -shared -Wl,--out-implib,$LIBNAME.dll.a -Wl,--version-script,libhdcd.ver -s -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res
+rm -f libhdcd.ver
 
 "$MGCC" $CFLAGS -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
 "$MGCC" -s -o hdcd.exe hdcd-detect.o wavreader.o wavout.o $LIBNAME.a hdcd.res
