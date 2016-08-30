@@ -128,8 +128,8 @@ int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
         memcpy(&st, &s->state, sizeof(hdcd_state_stereo));
         memcpy(&d, &s->detect, sizeof(hdcd_detection_data));
     }
-    if (d.hdcd_detected == HDCD_EFFECTUAL) return
-        d.hdcd_detected; /* easy peasy */
+    if (d.hdcd_detected == HDCD_EFFECTUAL)
+        return d.hdcd_detected; /* easy peasy */
     samp = malloc(buf_size);
     if (samp) {
         memcpy(samp, samples, buf_size);
