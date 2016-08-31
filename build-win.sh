@@ -17,6 +17,8 @@ if [ -z `which "$MAR"` ]; then echo "Needs mingw ar"; exit 1; fi
 if [ -z `which "$MGCC"` ]; then echo "Needs mingw gcc"; exit 1; fi
 if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 
+rm -f hdcd-detect.exe  hdcd.exe  libhdcd.a  libhdcd.dll  libhdcd.dll.a
+
 PVER=$(./package_version.sh)
 WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+|)/) ? "$1,$2,".($3||0).",0" : "0,0,0,0")}')
 LVER=$(./abi_version.sh -winh)
