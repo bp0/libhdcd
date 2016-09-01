@@ -55,7 +55,7 @@ test_pipes() {
 }
 
 do_test() {
-    TOPT="$1"
+    TOPT="-j $1"
     TFILE="test/$2"
     THASH="$3"
     TOUT="$TMP/hdcd_tests_$$.wav"

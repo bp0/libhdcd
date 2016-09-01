@@ -35,6 +35,7 @@ struct hdcd_simple {
     hdcd_detection_data detect;
     hdcd_log logger;
     int smode;
+    int check_input;
 };
 
 /** set stereo processing mode, only used internally */
@@ -73,6 +74,7 @@ void hdcd_reset(hdcd_simple *s)
     _hdcd_detect_reset(&s->detect);
     hdcd_smode(s, 1);
     hdcd_analyze_mode(s, 0);
+    s->check_input = 0;
 }
 
 static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count) {
@@ -96,7 +98,8 @@ void hdcd_process(hdcd_simple *s, int *samples, int count)
 {
     if (!s) return;
 
-    _hdcd_check_samples(s, samples, count);
+    if (s->check_input)
+        _hdcd_check_samples(s, samples, count);
 
     if (s->smode)
         /* process stereo channels together */
@@ -133,7 +136,8 @@ int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
     samp = malloc(buf_size);
     if (samp) {
         memcpy(samp, samples, buf_size);
-        _hdcd_check_samples(s, samp, count);
+        if (s->check_input)
+            _hdcd_check_samples(s, samp, count);
         _hdcd_process_stereo(&st, samp, count);
         _hdcd_detect_stereo(&st, &d);
         free(samp);
