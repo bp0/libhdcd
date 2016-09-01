@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "{ start test/mkmix.sh }"
-rm hdcd-mix.raw
+rm -f hdcd-mix.raw
 ../hdcd-detect -qpn -o hdcd-mix0.raw hdcd-pfa.wav
 ../hdcd-detect -ri hdcd-mix0.raw
 ../hdcd-detect -qpn -o hdcd-mix1.raw hdcd-tgm.wav
