@@ -43,10 +43,6 @@ AC_SUBST(HDCD_LIBTOOL_VERSION)
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
-AC_SEARCH_LIBS([sin], [m], [], [
-  AC_MSG_ERROR([unable to find the sin() function])
-])
-
 LT_INIT
 
 DOLT

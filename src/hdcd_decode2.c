@@ -29,7 +29,6 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -825,9 +824,6 @@ static const int32_t gaintab[] = {
  *  always negative but stored positive. */
 #define APPLY_GAIN(s,g) do{int64_t s64 = s; s64 *= gaintab[g]; s = (int32_t)(s64 >> 23); }while(0);
 
-/** tone generator: sample_number, frequency, sample_rate, amplitude */
-#define TONEGEN16(sn, f, sr, a) (int16_t)(sin((6.28318530718 * (sn) * (f)) /(sr)) * (a) * 0x7fff)
-
 /** used in _hdcd_scan_x() and _hdcd_integrate_x() */
 #define HDCD_MAX_CHANNELS 2
 
@@ -892,6 +888,8 @@ void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, in
 
     sustain_period_ms = FFMIN(sustain_period_ms, 60000);
     sustain_period_ms = FFMAX(sustain_period_ms, 200);
+    state->cdt_period = sustain_period_ms;
+    state->rate = rate;
     state->sustain_reset = sustain_period_ms*rate/1000;
     state->sustain = 0;
 
@@ -1122,6 +1120,9 @@ static int _hdcd_scan_x(hdcd_state *states, int channels, const int32_t *samples
     return result;
 }
 
+/* found in hdcd_analyze_tonegen.c */
+int _hdcd_tone16(int *sn, int rate);
+
 /** replace audio with solid tone, but save LSBs */
 static void _hdcd_analyze_prepare(hdcd_state *state, int32_t *samples, int count, int stride) {
     int n;
@@ -1133,9 +1134,8 @@ static void _hdcd_analyze_prepare(hdcd_state *state, int32_t *samples, int count
          * bit 1: Original sample was above PE level */
         int32_t save = (abs(samples[n]) - PEAK_EXT_LEVEL >= 0) ? 2 : 0; /* above PE level */
         save |= samples[n] & 1;                      /* save LSB for HDCD packets */
-        samples[n] = TONEGEN16(state->_ana_snb, 277.18, 44100, 0.1);
+        samples[n] = _hdcd_tone16(&state->_ana_snb, state->rate);
         samples[n] = (samples[n] | 3) ^ ((~save) & 3);
-        if (++state->_ana_snb > 0x3fffffff) state->_ana_snb = 0;
     }
 }
 

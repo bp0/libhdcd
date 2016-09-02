@@ -115,6 +115,8 @@ verify_files() {
 
 verify_files
 
+mkmix
+
 test_pipes
 
 # format:
@@ -152,23 +154,25 @@ do_test "-qxp" "hdcd-pfa.wav"  "760628f8e3c81e7f7f94fdf594decd61" 0 "pfa-special
 do_test "-qx" "ava16.wav"     "a44fea1a2c825ed24f57f35a328d7874" 1
 
 # tests -n (nop) in mkmix, then tests mixed packet format
-mkmix
 do_test "-qxrp"  "hdcd-mix.raw"  "6a3cf7f920f419477ada264cc63b40da" 0 "hdt-nop-cat-mixed-pf"
 
 # another way that "verify files before testing" might have worked
 do_test "-qxrpn" "hdcd.raw"      "ca3ce18c754bd008d7f308c2892cb795" 1 "hdt-nop"
 
 # analyzer tests
-do_test "-qx -z pe"     "hdcd-all.wav"  "769ce35ba609d6cf90f525db3be6cc92" 0 "analyzer-pe"
-do_test "-qxp -z pe"    "hdcd.wav"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
-do_test "-qx -z lle"    "hdcd-all.wav"  "cbec0b7d20475c4c0b0e341e3b354bd4" 0 "analyzer-lle"
-do_test "-qx -z cdt"    "hdcd-all.wav"  "3a3410e9a0646ea9a25e9ac2124cbeea" 0 "analyzer-cdt"
-do_test "-qx -z tgm"    "hdcd-tgm.wav"  "45df3641d1023fed4621c4ae6ee45800" 0 "analyzer-tgm"
-do_test "-qx -z pel"    "ava16.wav"     "74bb1f47db2bcf0c35d38437f147ab8f" 1 "analyzer-pel"
-do_test "-qx -z tgm"    "hdcd-ftm.wav"  "d4559c4149cb6629ea7a5cde775e380e" 0 "analyzer-tgm-for-the-masses"
-do_test "-qx -z ltgm"   "hdcd-ftm.wav"  "7656237a5f8171d58113b5fe5b718738" 0 "analyzer-lgtm-for-the-masses"
-do_test "-qx -z ltgm"   "ava16.wav"     "5479204e34eeedf714122c314f779c83" 1 "analyzer-lgtm-nch-process-false-positive"
-do_test "-qx -z cdt"    "ava16.wav"     "d54f7e54623b6bfbe78d127e69fefe6e" 1 "analyzer-cdt-nch-process-false-positive"
+do_test "-qx -z pe"     "hdcd-all.wav"  "8dad6ce72136e973f7d5ee61e35b501c" 0 "analyzer-pe"
+do_test "-qx -z lle"    "hdcd-all.wav"  "275bd3ecbbfdd800e2b056d5be08c217" 0 "analyzer-lle"
+do_test "-qxr -z cdt"   "hdcd-mix.raw"  "ec9963ed629ee020a593a047612fcc9f" 0 "analyzer-cdt"
+do_test "-qx -z tgm"    "hdcd-tgm.wav"  "6e1a07529d4cfb16e8e3639d75a7083d" 0 "analyzer-tgm"
+do_test "-qx -z pel"    "ava16.wav"     "63b6f873049794eb7a899d9a5c6c8a5e" 1 "analyzer-pel"
+do_test "-qx -z tgm"    "hdcd-ftm.wav"  "aba5385269206f2dc63b04c4dfdd05c9" 0 "analyzer-tgm-for-the-masses"
+do_test "-qx -z ltgm"   "hdcd-ftm.wav"  "51be69c47363d5fa1c02eaf7fecc22c3" 0 "analyzer-lgtm-for-the-masses"
+do_test "-qx -z ltgm"   "ava16.wav"     "c9429ab9cef4e8e872bd5a93024b3069" 1 "analyzer-lgtm-nch-process-false-positive"
+do_test "-qx -z cdt"    "ava16.wav"     "eb93df7b31c6b68bd64aff314ca1bc23" 1 "analyzer-cdt-nch-process-false-positive"
+
+# this will not match after the change to the tone generator in libhdcd, unless ffmpeg af_hdcd's
+# is changed in the same way.
+#do_test "-qxp -z pe"    "hdcd.wav"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
 
 echo "passed: $PASSED / $TESTS"
 echo "exit: $EXIT_CODE"

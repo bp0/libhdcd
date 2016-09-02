@@ -94,6 +94,9 @@ typedef struct {
 
     int running_gain; /**< 11-bit (3.8) fixed point, extended from target_gain */
 
+    int rate;             /**< sample rate */
+    int cdt_period;       /**< cdt period in ms */
+
     /** counters */
     int code_counterA;            /**< 8-bit format packet */
     int code_counterA_almost;     /**< looks like an A code, but a bit expected to be 0 is 1 */

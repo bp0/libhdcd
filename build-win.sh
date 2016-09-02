@@ -89,15 +89,15 @@ LIBHDCD_$MVER {
 };
 EOF
 
-"$MGCC" $CFLAGS -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c
-"$MAR" crsu $LIBNAME.a hdcd_decode2.o hdcd_libversion.o hdcd_simple.o
-"$MGCC" -shared -Wl,--out-implib,$LIBNAME.dll.a -Wl,--version-script,libhdcd.ver -s -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o libhdcd.res
+"$MGCC" $CFLAGS -c ../src/hdcd_decode2.c ../src/hdcd_simple.c ../src/hdcd_libversion.c ../src/hdcd_analyze_tonegen.c
+"$MAR" crsu $LIBNAME.a hdcd_decode2.o hdcd_libversion.o hdcd_simple.o hdcd_analyze_tonegen.o
+"$MGCC" -shared -Wl,--out-implib,$LIBNAME.dll.a -Wl,--version-script,libhdcd.ver -s -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o hdcd_analyze_tonegen.o libhdcd.res
 rm -f libhdcd.ver
 
 "$MGCC" $CFLAGS -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
 "$MGCC" -s -o hdcd.exe hdcd-detect.o wavreader.o wavout.o $LIBNAME.a hdcd.res
 rm -f hdcd-detect.o wavreader.o wavout.o
-rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o
+rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o hdcd_analyze_tonegen.o
 
 "$MGCC" $CFLAGS -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
 "$MGCC" -s -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o hdcd-detect.res -L. -l$LIBNAME
