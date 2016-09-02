@@ -65,14 +65,15 @@ do_test() {
     if [ -z "$TTIT" ]; then TTIT="$2"; fi
     ((TESTS++))
     echo "$TTIT:"
+    echo "   bin = $HDCD_DETECT" >"$TOUT.summary"
+    echo "   opt = $TOPT" >>"$TOUT.summary"
+    echo "   -o = $TOUT" >>"$TOUT.summary"
+    echo "   test_file = $TFILE" >>"$TOUT.summary"
     "$HDCD_DETECT" $TOPT -o "$TOUT" "$TFILE"
     HDEX=$?
     if ((HDEX != TEXI)); then
+        cat "$TOUT.summary"
         echo "hdcd-detect returned unexpected exit code: $HDEX (wanted: $TEXI)"
-        echo "   bin = $HDCD_DETECT"
-        echo "   opt = $TOPT"
-        echo "   -o = $TOUT"
-        echo "   test_file = $TFILE"
         echo "-- FAILED [exit_code]"
         EXIT_CODE=1
         die_on_fail
@@ -82,6 +83,7 @@ do_test() {
         echo "$THASH" >"$TOUT.md5.target"
         RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
         if [ -n "$RESULT" ]; then
+            cat "$TOUT.summary"
             echo "$RESULT"
             echo "-- FAILED [md5_result]"
             EXIT_CODE=1
@@ -91,7 +93,7 @@ do_test() {
             ((PASSED++))
         fi
     fi
-    rm -f "$TOUT" "$TOUT.md5" "$TOUT.md5.target"
+    rm -f "$TOUT" "$TOUT.md5" "$TOUT.md5.target" "$TOUT.summary"
 }
 
 mkmix() {
