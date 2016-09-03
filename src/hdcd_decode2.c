@@ -1142,11 +1142,8 @@ static void _hdcd_analyze_prepare(hdcd_state *state, int32_t *samples, int count
 /** analyze mode: encode a value in the given sample by adjusting the amplitude */
 static int32_t _hdcd_analyze_gen(int32_t sample, unsigned int v, unsigned int maxv)
 {
-    float sflt = sample, vv = v;
-    vv /= maxv;
-    if (vv > 1.0) vv = 1.0;
-    sflt *= 1.0 + (vv * 18);
-    return (int32_t)sflt;
+    static const int r = 18;
+    return sample * (1 +  (v * r / maxv));
 }
 
 /** behaves like _hdcd_envelope(), but encodes processing information in
