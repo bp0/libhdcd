@@ -1012,7 +1012,7 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
         states[i].readahead -= result;
 
         if (states[i].readahead == 0) {
-            uint32_t wbits = (states[i].window ^ states[i].window >> 5 ^ states[i].window >> 23);
+            uint32_t wbits = (uint32_t)(states[i].window ^ states[i].window >> 5 ^ states[i].window >> 23);
             if (states[i].arg) {
                 f = 0;
                 switch (_hdcd_code(wbits, &states[i].control)) {
@@ -1144,8 +1144,10 @@ static void _hdcd_analyze_prepare(hdcd_state *state, int32_t *samples, int count
 /** analyze mode: encode a value in the given sample by adjusting the amplitude */
 static int32_t _hdcd_analyze_gen(int32_t sample, unsigned int v, unsigned int maxv)
 {
-    static const int r = 18;
-    return sample * (1 +  (v * r / maxv));
+    static const int r = 18, m = 1024;
+    int64_t s64 = sample;
+    v = m + (v * r * m / maxv);
+    return (int32_t)(s64 * v / m);
 }
 
 /** behaves like _hdcd_envelope(), but encodes processing information in
