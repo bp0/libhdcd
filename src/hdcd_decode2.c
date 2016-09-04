@@ -872,31 +872,38 @@ void _hdcd_log(hdcd_log *log, const char* fmt, ...) {
 void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log *log)
 {
     int i;
+    uint64_t sustain_reset;
+
+    /* check parameters */
     if (!state) return;
     if (!rate) rate = 44100;
     if (!sustain_period_ms)
         sustain_period_ms = 2000;
     else {
         sustain_period_ms = FFMIN(sustain_period_ms, 60000);
-        sustain_period_ms = FFMAX(sustain_period_ms, 200);
+        sustain_period_ms = FFMAX(sustain_period_ms, 100);
     }
+    sustain_reset = sustain_period_ms * rate / 1000;
 
+    /* initialize memory area */
     memset(state, 0, sizeof(*state));
     state->sid = HDCD_SID_STATE;
-    state->decoder_options = flags;
 
+    /* set options */
+    state->decoder_options = flags;
+    state->cdt_period = sustain_period_ms;
+    state->rate = rate;
+
+    /* decoding state */
     state->window = 0;
     state->readahead = 32;
     state->arg = 0;
     state->control = 0;
-
     state->running_gain = 0;
-
-    state->cdt_period = sustain_period_ms;
-    state->rate = rate;
-    state->sustain_reset = sustain_period_ms*rate/1000;
+    state->sustain_reset = sustain_reset;
     state->sustain = 0;
 
+    /* reset all counters */
     state->code_counterA = 0;
     state->code_counterA_almost = 0;
     state->code_counterB = 0;
@@ -909,8 +916,11 @@ void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, in
     state->max_gain = 0;
     state->count_sustain_expired = -1;
 
+    /* log and location */
     state->log = log;
     state->sample_count = 0;
+
+    /* analyze mode */
     state->ana_mode = analyze_mode;
     state->_ana_snb = 0;
 }
