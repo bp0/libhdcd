@@ -874,6 +874,12 @@ void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, in
     int i;
     if (!state) return;
     if (!rate) rate = 44100;
+    if (!sustain_period_ms)
+        sustain_period_ms = 2000;
+    else {
+        sustain_period_ms = FFMIN(sustain_period_ms, 60000);
+        sustain_period_ms = FFMAX(sustain_period_ms, 200);
+    }
 
     memset(state, 0, sizeof(*state));
     state->sid = HDCD_SID_STATE;
@@ -886,8 +892,6 @@ void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, in
 
     state->running_gain = 0;
 
-    sustain_period_ms = FFMIN(sustain_period_ms, 60000);
-    sustain_period_ms = FFMAX(sustain_period_ms, 200);
     state->cdt_period = sustain_period_ms;
     state->rate = rate;
     state->sustain_reset = sustain_period_ms*rate/1000;
@@ -912,7 +916,7 @@ void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, in
 }
 void _hdcd_reset(hdcd_state *state, unsigned rate) {
     if (!state) return;
-    _hdcd_reset_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
+    _hdcd_reset_ext(state, rate, 0, 0, HDCD_ANA_OFF, NULL);
 }
 void _hdcd_set_analyze_mode(hdcd_state *state, hdcd_ana_mode mode) {
     if (!state) return;
@@ -935,7 +939,7 @@ void _hdcd_reset_stereo_ext(hdcd_state_stereo *state, unsigned rate, int sustain
 }
 void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate) {
     if (!state) return;
-    _hdcd_reset_stereo_ext(state, rate, 2000, 0, HDCD_ANA_OFF, NULL);
+    _hdcd_reset_stereo_ext(state, rate, 0, 0, HDCD_ANA_OFF, NULL);
 }
 void _hdcd_set_analyze_mode_stereo(hdcd_state_stereo *state, hdcd_ana_mode mode) {
     if (!state) return;

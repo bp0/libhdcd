@@ -63,7 +63,7 @@ hdcd_simple *hdcd_new(void)
 static void _hdcd_simple_reset_state(hdcd_state_stereo *state)
 {
     if (!state) return;
-    _hdcd_reset_stereo_ext(state, 44100, 2000, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
+    _hdcd_reset_stereo_ext(state, 44100, 0, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
 }
 
 /** on a song change or something, reset the decoding state */
@@ -77,7 +77,8 @@ void hdcd_reset(hdcd_simple *s)
     hdcd_analyze_mode(s, 0);
 }
 
-static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count) {
+static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count)
+{
     int i, top = 0, bottom = 0;
     if (!s) return;
 
