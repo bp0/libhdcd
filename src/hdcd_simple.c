@@ -55,6 +55,8 @@ hdcd_simple *hdcd_new(void)
     hdcd_simple *s = malloc(sizeof(*s));
     if (s) {
         memset(s, 0, sizeof(*s));
+        _hdcd_log_init(&s->logger, NULL, NULL);
+        _hdcd_log_disable(&s->logger);
         hdcd_reset(s);
     }
     return s;
@@ -63,7 +65,7 @@ hdcd_simple *hdcd_new(void)
 static void _hdcd_simple_reset_state(hdcd_state_stereo *state)
 {
     if (!state) return;
-    _hdcd_reset_stereo_ext(state, 44100, 0, HDCD_FLAG_TGM_LOG_OFF, HDCD_ANA_OFF, NULL);
+    _hdcd_reset_stereo(state, 44100, 0, HDCD_FLAG_TGM_LOG_OFF);
 }
 
 /** on a song change or something, reset the decoding state */
@@ -73,8 +75,9 @@ void hdcd_reset(hdcd_simple *s)
     s->check_input = 0;
     _hdcd_simple_reset_state(&s->state);
     _hdcd_detect_reset(&s->detect);
-    hdcd_smode(s, 1);
+    _hdcd_attach_logger(&s->state, &s->logger);
     hdcd_analyze_mode(s, 0);
+    hdcd_smode(s, 1);
 }
 
 static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count)
@@ -212,7 +215,7 @@ int hdcd_logger_attach(hdcd_simple *s, hdcd_log_callback func, void *priv)
     if (!s) return 0;
     if (!func) return 0;
     _hdcd_log_init(&s->logger, func, priv);
-    _hdcd_attach_logger_stereo(&s->state, &s->logger);
+    _hdcd_attach_logger(&s->state, &s->logger);
     return 1;
 }
 
@@ -220,7 +223,7 @@ void hdcd_logger_default(hdcd_simple *s)
 {
     if (!s) return;
     _hdcd_log_init(&s->logger, NULL, NULL);
-    _hdcd_attach_logger_stereo(&s->state, &s->logger);
+    _hdcd_attach_logger(&s->state, &s->logger);
 }
 
 void hdcd_logger_detach(hdcd_simple *s)
@@ -228,7 +231,7 @@ void hdcd_logger_detach(hdcd_simple *s)
     if (!s) return;
     /* just reset to the default and then disable */
     _hdcd_log_init(&s->logger, NULL, NULL);
-    _hdcd_attach_logger_stereo(&s->state, &s->logger);
+    _hdcd_attach_logger(&s->state, &s->logger);
     _hdcd_log_disable(&s->logger);
 }
 
@@ -248,17 +251,17 @@ int hdcd_analyze_mode(hdcd_simple *s, int mode)
         case HDCD_ANA_CDT:
         case HDCD_ANA_TGM:
             hdcd_smode(s, 1);
-            _hdcd_set_analyze_mode_stereo(&s->state, mode);
+            _hdcd_set_analyze_mode(&s->state, mode);
             return 1;
         case HDCD_ANA_PEL:     /* HDCD_ANA_PE + HDCD_FLAG_FORCE_PE */
             hdcd_smode(s, 1);
             s->state.channel[0].decoder_options |= HDCD_FLAG_FORCE_PE;
             s->state.channel[1].decoder_options |= HDCD_FLAG_FORCE_PE;
-            _hdcd_set_analyze_mode_stereo(&s->state, HDCD_ANA_PE);
+            _hdcd_set_analyze_mode(&s->state, HDCD_ANA_PE);
             return 1;
         case HDCD_ANA_LTGM:   /* HDCD_ANA_LLE + stereo_mode off */
             hdcd_smode(s, 0);
-            _hdcd_set_analyze_mode_stereo(&s->state, HDCD_ANA_LLE);
+            _hdcd_set_analyze_mode(&s->state, HDCD_ANA_LLE);
             return 1;
     }
     return 0;

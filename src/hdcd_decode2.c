@@ -869,7 +869,7 @@ void _hdcd_log(hdcd_log *log, const char* fmt, ...) {
     }
 }
 
-void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log *log)
+void _hdcd_reset(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags)
 {
     int i;
     uint64_t sustain_reset;
@@ -917,50 +917,46 @@ void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, in
     state->count_sustain_expired = -1;
 
     /* log and location */
-    state->log = log;
+    state->log = NULL;
     state->sample_count = 0;
 
     /* analyze mode */
-    state->ana_mode = analyze_mode;
+    state->ana_mode = HDCD_ANA_OFF;
     state->_ana_snb = 0;
 }
-void _hdcd_reset(hdcd_state *state, unsigned rate) {
-    if (!state) return;
-    _hdcd_reset_ext(state, rate, 0, 0, HDCD_ANA_OFF, NULL);
-}
-void _hdcd_set_analyze_mode(hdcd_state *state, hdcd_ana_mode mode) {
-    if (!state) return;
-    state->ana_mode = mode;
-}
-void _hdcd_attach_logger(hdcd_state *state, hdcd_log *log) {
-    if (!state) return;
-    state->log = log;
-}
 
-void _hdcd_reset_stereo_ext(hdcd_state_stereo *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log *log) {
+void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate, int sustain_period_ms, int flags)
+{
     if (!state) return;
     memset(state, 0, sizeof(*state));
     state->sid = HDCD_SID_STATE_STEREO;
-    state->ana_mode = analyze_mode;
-    _hdcd_reset_ext(&state->channel[0], rate, sustain_period_ms, flags, analyze_mode, log);
-    _hdcd_reset_ext(&state->channel[1], rate, sustain_period_ms, flags, analyze_mode, log);
+    state->ana_mode = HDCD_ANA_OFF;
+    _hdcd_reset(&state->channel[0], rate, sustain_period_ms, flags);
+    _hdcd_reset(&state->channel[1], rate, sustain_period_ms, flags);
     state->val_target_gain = 0;
     state->count_tg_mismatch = 0;
 }
-void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate) {
+
+void _hdcd_set_analyze_mode(void *state, hdcd_ana_mode mode)
+{
+    hdcd_state *s = state;
+    hdcd_state_stereo *ss = state;
     if (!state) return;
-    _hdcd_reset_stereo_ext(state, rate, 0, 0, HDCD_ANA_OFF, NULL);
+    if (s->sid == HDCD_SID_STATE)
+        s->ana_mode = mode;
+    if (ss->sid == HDCD_SID_STATE_STEREO)
+        ss->ana_mode = ss->channel[0].ana_mode = ss->channel[1].ana_mode = mode;
 }
-void _hdcd_set_analyze_mode_stereo(hdcd_state_stereo *state, hdcd_ana_mode mode) {
+
+void _hdcd_attach_logger(void *state, hdcd_log *log)
+{
+    hdcd_state *s = state;
+    hdcd_state_stereo *ss = state;
     if (!state) return;
-    state->ana_mode = mode;
-    _hdcd_set_analyze_mode(&state->channel[0], mode);
-    _hdcd_set_analyze_mode(&state->channel[1], mode);
-}
-void _hdcd_attach_logger_stereo(hdcd_state_stereo *state, hdcd_log *log) {
-    if (!state) return;
-    state->channel[0].log = log;
-    state->channel[1].log = log;
+    if (s->sid == HDCD_SID_STATE)
+        s->log = log;
+    if (ss->sid == HDCD_SID_STATE_STEREO)
+        ss->channel[0].log = ss->channel[1].log = log;
 }
 
 typedef enum {

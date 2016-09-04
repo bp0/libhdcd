@@ -133,18 +133,17 @@ typedef struct {
 } hdcd_state_stereo;
 
 /* n-channel versions */
-void _hdcd_reset(hdcd_state *state, unsigned rate);
-void _hdcd_reset_ext(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log *log);
-void _hdcd_set_analyze_mode(hdcd_state *state, hdcd_ana_mode mode);
-void _hdcd_attach_logger(hdcd_state *state, hdcd_log *log);
+void _hdcd_reset(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags);
 void _hdcd_process(hdcd_state *state, int *samples, int count, int stride);
 
 /* stereo versions */
-void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate);
-void _hdcd_reset_stereo_ext(hdcd_state_stereo *state, unsigned rate, int sustain_period_ms, int flags, hdcd_ana_mode analyze_mode, hdcd_log *log);
-void _hdcd_set_analyze_mode_stereo(hdcd_state_stereo *state, hdcd_ana_mode mode);
-void _hdcd_attach_logger_stereo(hdcd_state_stereo *state, hdcd_log *log);
+void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate, int sustain_period_ms, int flags);
 void _hdcd_process_stereo(hdcd_state_stereo *state, int *samples, int count);
+
+/* hdcd_state* or hdcd_state_stereo* */
+void _hdcd_attach_logger(void *state, hdcd_log *log); /* log = NULL to use the default logger */
+void _hdcd_set_analyze_mode(void *state, hdcd_ana_mode mode);
+
 
 /********************* optional detection and stats ************/
 
