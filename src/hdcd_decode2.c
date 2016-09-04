@@ -992,7 +992,7 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
 {
     uint32_t bits[HDCD_MAX_CHANNELS];
     int result = count;
-    int i, j;
+    int i, j, f;
     *flag = 0;
 
     memset(bits, 0, sizeof(bits));
@@ -1014,13 +1014,14 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
         if (states[i].readahead == 0) {
             uint32_t wbits = (states[i].window ^ states[i].window >> 5 ^ states[i].window >> 23);
             if (states[i].arg) {
+                f = 0;
                 switch (_hdcd_code(wbits, &states[i].control)) {
                     case HDCD_CODE_A:
-                        *flag |= i+1;
+                        f = 1;
                         states[i].code_counterA++;
                         break;
                     case HDCD_CODE_B:
-                        *flag |= i+1;
+                        f = 1;
                         states[i].code_counterB++;
                         break;
                     case HDCD_CODE_A_ALMOST:
@@ -1042,7 +1043,8 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
                         /* not used here, but fix -Wswitch */
                         break;
                 }
-                if (*flag&(i+1)) {
+                if (f) {
+                    *flag |= (1<<i);
                     /* update counters */
                     if (states[i].control & 16) states[i].count_peak_extend++;
                     if (states[i].control & 32) states[i].count_transient_filter++;
