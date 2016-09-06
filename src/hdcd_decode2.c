@@ -1043,15 +1043,6 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
     return result;
 }
 
-static void _hdcd_sustain_reset(hdcd_state *state)
-{
-    state->sustain = state->sustain_reset;
-    /* if this is the first reset then change
-     * from never set, to never expired */
-    if (state->count_sustain_expired == -1)
-        state->count_sustain_expired = 0;
-}
-
 static int _hdcd_scan_x(hdcd_state *states, int channels, const int32_t *samples, int max, int stride)
 {
     int result;
@@ -1080,8 +1071,15 @@ static int _hdcd_scan_x(hdcd_state *states, int channels, const int32_t *samples
         result += consumed;
         if (flag) {
             /* reset timer if code detected in a channel */
-            for(i = 0; i < channels; i++)
-                if (flag & (1<<i)) _hdcd_sustain_reset(&states[i]);
+            for(i = 0; i < channels; i++) {
+                if (flag & (1<<i)) {
+                    states[i].sustain = states[i].sustain_reset;
+                    /* if this is the first reset then change
+                     * from never set, to never expired */
+                    if (states[i].count_sustain_expired == -1)
+                        states[i].count_sustain_expired = 0;
+                }
+            }
             break;
         }
         samples += consumed * stride;
