@@ -1,6 +1,27 @@
 #!/bin/bash
 
 # Run tests on the HDCD decoder library, against previous results
+AST=""
+case $1 in
+    -bin)
+        HDCD_DETECT="$2"
+        AST="(bin: \"$HDCD_DETECT\")"
+    ;;
+    -win)
+        HDCD_DETECT="./wine-hdcd-detect.sh"
+        AST="(bin: \"$HDCD_DETECT\")"
+    ;;
+    *)
+        HDCD_DETECT="./hdcd-detect"
+    ;;
+esac
+
+if [ ! -f "$HDCD_DETECT" ]; then
+    exit 1;
+    echo "Not found: \"$HDCD_DETECT\""
+fi
+echo "BIN is \"$HDCD_DETECT\""
+"$HDCD_DETECT" -v
 
 if [ -d "/run/shm" ]; then
     TMP="/run/shm"
@@ -11,7 +32,6 @@ else
 fi
 echo "TMP is $TMP"
 
-HDCD_DETECT="./hdcd-detect"
 MD5SUM=$(which md5sum)
 if [ -z "$MD5SUM" ]; then
     echo "Requires md5sum"
@@ -173,6 +193,6 @@ do_test "-qx -z cdt"    "ava16.wav"     "eb93df7b31c6b68bd64aff314ca1bc23" 1 "an
 # test for differences from ffmpeg amode
 do_test "-qxp -z pe"    "hdcd.wav"      "63b534310b3d993fa421a18da9552096" 0 "analyzer-pe-fate-match"
 
-echo "passed: $PASSED / $TESTS"
+echo "passed: $PASSED / $TESTS $AST"
 echo "exit: $EXIT_CODE"
 exit $EXIT_CODE
