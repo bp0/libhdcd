@@ -25,6 +25,11 @@ And then use the normal configure & make:
 
 [autotools]: https://autotools.io
 
+CLI Tool
+--------
+
+See `hdcd-detect -h` for usage.
+
 Simple API
 ----------
 ### Include
