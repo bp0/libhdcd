@@ -964,7 +964,6 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
     uint32_t bits[HDCD_MAX_CHANNELS];
     int result = count;
     int i, j, f;
-    uint8_t *code;
     *flag = 0;
 
     memset(bits, 0, sizeof(bits));
@@ -987,13 +986,12 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
             uint32_t wbits = (uint32_t)(states[i].window ^ states[i].window >> 5 ^ states[i].window >> 23);
             if (states[i].arg) {
                 f = 0;
-                code = &states[i].control;
                 if ((wbits & 0x0fa00500) == 0x0fa00500) {
                     /* A: 8-bit code  0x7e0fa005[..] */
                     if ((wbits & 0xc8) == 0) {
                         /*                   [..pt gggg]
                          * 0x0fa005[..] -> 0b[00.. 0...], gain part doubled (shifted left 1) */
-                        *code = (wbits & 255) + (wbits & 7);
+                        states[i].control = (wbits & 255) + (wbits & 7);
                         f = 1;
                         states[i].code_counterA++;
                     } else {
@@ -1007,7 +1005,7 @@ static int _hdcd_integrate_x(hdcd_state *states, int channels, int *flag, const 
                     if (((wbits ^ (~wbits >> 8 & 255)) & 0xffff00ff) == 0xa0060000) {
                         /*          check:   [..pt gggg ~(..pt gggg)]
                          * 0xa006[....] -> 0b[.... ....   .... .... ] */
-                        *code = wbits >> 8 & 255;
+                        states[i].control = wbits >> 8 & 255;
                         f = 1;
                         states[i].code_counterB++;
                     } else {
