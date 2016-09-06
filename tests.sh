@@ -17,8 +17,8 @@ case $1 in
 esac
 
 if [ ! -f "$HDCD_DETECT" ]; then
-    exit 1;
     echo "Not found: \"$HDCD_DETECT\""
+    exit 1;
 fi
 echo "BIN is \"$HDCD_DETECT\""
 "$HDCD_DETECT" -v
