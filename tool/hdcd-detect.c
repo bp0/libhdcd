@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 #include "../src/hdcd_simple.h"
 #include "wavreader.h"
 #include "wavout.h"
@@ -262,9 +266,12 @@ int main(int argc, char *argv[]) {
         channels = 2;
         sample_rate = 44100;
         bits_per_sample = 16;
-        if (strcmp(infile, "-") == 0)
+        if (strcmp(infile, "-") == 0) {
             fp_raw_in = stdin;
-        else {
+#ifdef _WIN32
+            setmode(fileno(stdin), O_BINARY);
+#endif
+        } else {
             fp_raw_in = fopen(infile, "rb");
             if (!fp_raw_in) {
                 if (!opt_quiet) fprintf(stderr, "Unable to open raw pcm file %s\n", infile);
