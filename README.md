@@ -1,6 +1,7 @@
 # libhdcd
 
-A stand-alone library for High Definition Compatible Digital (HDCD) decoding and analysis based on foo_hdcd and ffmpeg's af_hdcd. See AUTHORS.
+A stand-alone library for High Definition Compatible Digital (HDCD) decoding
+and analysis based on foo_hdcd and ffmpeg's af_hdcd. See AUTHORS.
 
 Features
 --------
@@ -28,7 +29,16 @@ And then use the normal configure & make:
 CLI Tool
 --------
 
+tool/ contains source for an HDCD detection/decoding command-line interface
+utility that employs libhdcd, called hdcd-detect.
+
 See `hdcd-detect -h` for usage.
+
+The Windows binary package includes a special build of hdcd-detect called
+hdcd.exe that attempts to be a drop-in replacement for Key's original hdcd.exe,
+but with all the recent improvements. This compatibility mode can be used in
+hdcd-detect using the -k option. The primary difference is that the default
+behavior is to read from stdin, and write to stdout.
 
 Simple API
 ----------
@@ -57,7 +67,9 @@ Simple API
 
     hdcd_reset(ctx);  /* reset the decoder state */
 
-It is best to hdcd_reset() and then seek a couple seconds behind the target to let the the decoder process samples and catch the nearest packet. The samples leading up to the seek target can then be discarded.
+It is best to hdcd_reset() and then seek a couple seconds behind the target
+to let the the decoder process samples and catch the nearest packet. The
+samples leading up to the seek target can then be discarded.
 
 ### Cleanup
 
@@ -87,7 +99,11 @@ Complete detection stats are available. See hdcd_simple.h and hdcd_detect.h for 
 
 ### Analyze mode
 
-A mode to aid in analysis of HDCD encoded audio. In this mode the audio is replaced by a solid tone and the amplitude is adjusted to signal some specified aspect of the process. The output can be loaded in an audio editor alongside the original, where the user can see where different features or states are present.
-See hdcd_ana_mode in hdcd_analyze.h. See also [HDCD § Analyze mode](http://wiki.hydrogenaud.io/index.php?title=High_Definition_Compatible_Digital#Analyze_mode)
+A mode to aid in analysis of HDCD encoded audio. In this mode the audio is
+replaced by a solid tone and the amplitude is adjusted to signal some specified
+aspect of the process. The output can be loaded in an audio editor alongside
+the original, where the user can see where different features or states are
+present. See hdcd_ana_mode in hdcd_analyze.h.
+See also [HDCD § Analyze mode](http://wiki.hydrogenaud.io/index.php?title=High_Definition_Compatible_Digital#Analyze_mode)
 
     hdcd_analyze_mode(MODE);
