@@ -170,9 +170,8 @@ do_test "-qx -z ltgm"   "hdcd-ftm.wav"  "f386afaa1a1cd4e47c21f0b8dc541e21" 0 "an
 do_test "-qx -z ltgm"   "ava16.wav"     "aed4aa16a7cb6c13ec72d7715ab78a10" 1 "analyzer-lgtm-nch-process-false-positive"
 do_test "-qx -z cdt"    "ava16.wav"     "eb93df7b31c6b68bd64aff314ca1bc23" 1 "analyzer-cdt-nch-process-false-positive"
 
-# this will not match after the change to the tone generator in libhdcd, unless ffmpeg af_hdcd's
-# is changed in the same way.
-#do_test "-qxp -z pe"    "hdcd.wav"      "81a4f00f85a585bc0198e9a0670a8cde" 0 "analyzer-pe-fate-match"
+# test for differences from ffmpeg amode
+do_test "-qxp -z pe"    "hdcd.wav"      "63b534310b3d993fa421a18da9552096" 0 "analyzer-pe-fate-match"
 
 echo "passed: $PASSED / $TESTS"
 echo "exit: $EXIT_CODE"
