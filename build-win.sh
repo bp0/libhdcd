@@ -20,7 +20,7 @@ if [ -z `which "$MWINDRES"` ]; then echo "Needs mingw windres"; exit 1; fi
 rm -f hdcd-detect.exe  hdcd.exe  libhdcd.a  libhdcd.dll  libhdcd.dll.a
 
 PVER=$(./package_version.sh)
-WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)-([0-9]+|)/) ? "$1,$2,".($3||0).",0" : "0,0,0,0")}')
+WVER=$(echo "$PVER" | perl -e 'while(<>) {print ((/^([0-9]+)\.([0-9]+)(-([0-9]+)|)/) ? "$1,$2,".($4||0).",0" : "0,0,0,0")}')
 LVER=$(./abi_version.sh -winh)
 DLLVER=$(./abi_version.sh -win)
 MVER=$(./abi_version.sh -major)
