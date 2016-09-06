@@ -25,7 +25,7 @@ extern "C" {
 
 typedef struct wavw_t wavw_t;
 
-wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int raw);
+wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int32_t sample_rate, int raw);
 int wav_write(wavw_t *wav, const int32_t *samples, int count);
 void wav_write_close(wavw_t *wav);
 

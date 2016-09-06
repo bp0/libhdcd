@@ -38,7 +38,7 @@
 #include "wavreader.h"
 #include "wavout.h"
 
-#define OPT_KI_SCAN_MAX 88200 /* two full seconds */
+#define OPT_KI_SCAN_MAX 384000 /* two full seconds at max rate */
 
 int lv_major = HDCDLIB_VER_MAJOR;
 int lv_minor = HDCDLIB_VER_MINOR;
@@ -98,7 +98,7 @@ static void usage(const char* name, int kmode) {
         "      \t\t stereo, 44.1kHz (also forces -p)\n"
         "    -a\t\t supress output\n"
         "    -i\t\t identify HDCD, implies -a -x, scans the\n"
-        "      \t\t first %d frames (%.0f ms)\n", OPT_KI_SCAN_MAX, (float)(OPT_KI_SCAN_MAX) / 44100 * 1000 );
+        "      \t\t first %d frames (%.0fms at 44.1kHz)\n", OPT_KI_SCAN_MAX, (float)(OPT_KI_SCAN_MAX) / 44100 * 1000 );
     } else {
         fprintf(stderr,
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
@@ -128,14 +128,14 @@ int main(int argc, char *argv[]) {
     int kmode = BUILD_HDCD_EXE_COMPAT,
         opt_ka = 0, opt_ks = 0, opt_kr = 0, opt_ki = 0;
     int opt_help = 0, opt_dump_detect = 0;
-    int opt_raw_out = 0, opt_raw_in = 0;
+    int opt_raw_out = 0, opt_raw_in = 0, raw_rate = 44100;
     int opt_nop = 0, opt_testing = 0;
     int dv; /* used with opt_testing */
 
     hdcd_simple *ctx;
     char dstr[256];
 
-    while ((c = getopt(argc, argv, "acdfhijkno:pqrsvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "acde:fhijkno:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -173,6 +173,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 'f':
                 opt_force = 1;
+                break;
+            case 'e':
+                raw_rate = atoi(optarg);
                 break;
             case 'c':
                 outfile = "-";
@@ -264,7 +267,7 @@ int main(int argc, char *argv[]) {
     if (opt_raw_in) {
         format = 1;
         channels = 2;
-        sample_rate = 44100;
+        sample_rate = raw_rate;
         bits_per_sample = 16;
         if (strcmp(infile, "-") == 0) {
             fp_raw_in = stdin;
@@ -307,7 +310,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
             return 1;
         } else {
-            wav_out = wav_write_open(outfile, (opt_nop ? 16 : 24), opt_raw_out);
+            wav_out = wav_write_open(outfile, (opt_nop ? 16 : 24), sample_rate, opt_raw_out);
             if (!wav_out) return 1;
         }
     }
@@ -318,6 +321,10 @@ int main(int argc, char *argv[]) {
     }
 
     ctx = hdcd_new();
+    if (!hdcd_set_sample_rate(ctx, sample_rate)) {
+        if (!opt_quiet) fprintf(stderr, "Unusable sample rate %d\n", sample_rate);
+        return 1;
+    }
     if (!opt_quiet) hdcd_logger_default(ctx);
     if (amode) {
         if (!outfile) {

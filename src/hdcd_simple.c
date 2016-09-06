@@ -36,6 +36,7 @@ struct hdcd_simple {
     hdcd_log logger;
     int smode;
     int check_input;
+    int rate;
 };
 
 /** set stereo processing mode, only used internally */
@@ -57,15 +58,32 @@ hdcd_simple *hdcd_new(void)
         memset(s, 0, sizeof(*s));
         _hdcd_log_init(&s->logger, NULL, NULL);
         _hdcd_log_disable(&s->logger);
+        s->rate = 44100;
         hdcd_reset(s);
     }
     return s;
 }
 
-static void _hdcd_simple_reset_state(hdcd_state_stereo *state)
+int hdcd_set_sample_rate(hdcd_simple *s, int rate)
+{
+    if (!s) return 0;
+    if (rate == 44100
+        || rate == 88200
+        || rate == 176400
+        || rate == 48000
+        || rate == 96000
+        || rate == 192000) {
+        s->rate = rate;
+        hdcd_reset(s);
+        return 1;
+    } else
+        return 0;
+}
+
+static void _hdcd_simple_reset_state(hdcd_state_stereo *state, int rate)
 {
     if (!state) return;
-    _hdcd_reset_stereo(state, 44100, 0, HDCD_FLAG_TGM_LOG_OFF);
+    _hdcd_reset_stereo(state, rate, 0, HDCD_FLAG_TGM_LOG_OFF);
 }
 
 /** on a song change or something, reset the decoding state */
@@ -73,7 +91,7 @@ void hdcd_reset(hdcd_simple *s)
 {
     if (!s) return;
     s->check_input = 0;
-    _hdcd_simple_reset_state(&s->state);
+    _hdcd_simple_reset_state(&s->state, s->rate);
     _hdcd_detect_reset(&s->detect);
     _hdcd_attach_logger(&s->state, &s->logger);
     hdcd_analyze_mode(s, 0);
@@ -129,7 +147,7 @@ int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
      * calls to _hdcd_scan_stereo() until the first effectual packet
      * is found */
     if (ignore_state) {
-        _hdcd_simple_reset_state(&st);
+        _hdcd_simple_reset_state(&st, s->rate);
         _hdcd_detect_reset(&d);
     } else {
         memcpy(&st, &s->state, sizeof(hdcd_state_stereo));

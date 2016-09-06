@@ -31,6 +31,7 @@ typedef struct wavw_t {
     uint32_t size;
     int16_t bits_per_sample;
     int16_t bytes_per_sample;
+    int32_t sample_rate;
 
     int raw_pcm_only;
 
@@ -65,10 +66,8 @@ static int fwrite_int32el(int32_t v, FILE *fp) {
     return fwrite(&b, 1, 4, fp);
 }
 
-wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int raw) {
+wavw_t* wav_write_open(const char *file_name, int16_t bits_per_sample, int32_t sample_rate, int raw) {
     int16_t channels = 2;
-    int32_t sample_rate = 44100;
-
     int32_t size = 0;
     int32_t length = size + 44 - 8;
     int32_t bytes_per_second = channels * sample_rate * bits_per_sample/8;

@@ -49,6 +49,10 @@ void hdcd_reset(hdcd_simple *ctx);
 /** free the context when finished */
 void hdcd_free(hdcd_simple *ctx);
 
+/** set a sample rate other than 44100
+ *  return 1 on success or 0 on failure */
+int hdcd_set_sample_rate(hdcd_simple *ctx, int rate);
+
 /** as hdcd_process(), but only scan. samples remain unprocessed.
  *  return expected value of hdcd_detected() after processing */
 /*hdcd_dv*/
