@@ -883,7 +883,7 @@ void _hdcd_reset(hdcd_state *state, unsigned rate, int sustain_period_ms, int fl
         sustain_period_ms = FFMIN(sustain_period_ms, 60000);
         sustain_period_ms = FFMAX(sustain_period_ms, 100);
     }
-    sustain_reset = sustain_period_ms * rate / 1000;
+    sustain_reset = (uint64_t)sustain_period_ms * rate / 1000;
 
     /* initialize memory area */
     memset(state, 0, sizeof(*state));
