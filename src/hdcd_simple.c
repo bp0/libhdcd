@@ -115,7 +115,7 @@ static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count)
     }
 }
 
-/** process signed 16-bit samples (stored in 32-bit), interlaced stereo, 44100Hz */
+/** process signed 16-bit samples (stored in 32-bit), interlaced stereo */
 void hdcd_process(hdcd_simple *s, int *samples, int count)
 {
     if (!s) return;
