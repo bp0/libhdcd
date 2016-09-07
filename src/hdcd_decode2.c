@@ -872,7 +872,7 @@ void _hdcd_log(hdcd_log *log, const char* fmt, ...) {
 void _hdcd_reset(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags)
 {
     int i;
-    uint64_t sustain_reset;
+    uint32_t sustain_reset;
 
     /* check parameters */
     if (!state) return;
@@ -883,7 +883,13 @@ void _hdcd_reset(hdcd_state *state, unsigned rate, int sustain_period_ms, int fl
         sustain_period_ms = FFMIN(sustain_period_ms, 60000);
         sustain_period_ms = FFMAX(sustain_period_ms, 100);
     }
-    sustain_reset = (uint64_t)sustain_period_ms * rate / 1000;
+    /* Formerly: sustain_period_ms * rate / 1000, but
+     * max period (60000) * max sample rate (192000) overflows uint32.
+     * Attempted to do it as uint64, but causes a strange problem with
+     * the i686-w64-mingw32 build.
+     * Valid HDCD rate is always a multiple of 100,
+     * worst case is now  60000 * 1920; fits in uint32. */
+    sustain_reset = sustain_period_ms * (rate/100) / 10;
 
     /* initialize memory area */
     memset(state, 0, sizeof(*state));
