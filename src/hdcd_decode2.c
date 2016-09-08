@@ -1187,6 +1187,8 @@ static int _hdcd_analyze(int32_t *samples, int count, int stride, int gain, int 
 /** apply HDCD decoding parameters to a series of samples */
 static int _hdcd_envelope(int32_t *samples, int count, int stride, int gain, int target_gain, int extend)
 {
+    /* PEAK_EXT_LEVEL + max_asample == 0x8000 */
+    static const int max_asample = sizeof(peaktab) / sizeof(peaktab[0]) - 1;
     int i;
 
     if (extend) {
@@ -1194,7 +1196,7 @@ static int _hdcd_envelope(int32_t *samples, int count, int stride, int gain, int
             int32_t sample = samples[i * stride];
             int32_t asample = abs(sample) - PEAK_EXT_LEVEL;
             if (asample >= 0) {
-                if ((uint32_t)asample >= sizeof(peaktab) / sizeof(peaktab[0])) asample = sizeof(peaktab) / sizeof(peaktab[0]) - 1;
+                if (asample > max_asample ) asample = max_asample;
                 sample = sample >= 0 ? peaktab[asample] : -peaktab[asample];
             } else
                 sample <<= 15;
