@@ -1194,7 +1194,7 @@ static int _hdcd_envelope(int32_t *samples, int count, int stride, int gain, int
             int32_t sample = samples[i * stride];
             int32_t asample = abs(sample) - PEAK_EXT_LEVEL;
             if (asample >= 0) {
-                if ((uint32_t)asample >= sizeof(peaktab) ) asample = sizeof(peaktab) - 1;
+                if ((uint32_t)asample >= sizeof(peaktab) / sizeof(peaktab[0])) asample = sizeof(peaktab) / sizeof(peaktab[0]) - 1;
                 sample = sample >= 0 ? peaktab[asample] : -peaktab[asample];
             } else
                 sample <<= 15;
