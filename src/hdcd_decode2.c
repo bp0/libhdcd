@@ -1131,18 +1131,18 @@ static int32_t _hdcd_analyze_gen(int32_t sample, unsigned int v, unsigned int ma
 static int _hdcd_analyze(int32_t *samples, int count, int stride, int gain, int target_gain, int extend, int mode, int cdt_active, int tg_mismatch)
 {
     static const int maxg = 0xf << 7;
-    int i;
+    int i, limit = count * stride;
 
-    for (i = 0; i < count; i++) {
-        samples[i * stride] <<= 15;
+    for (i = 0; i < limit; i += stride) {
+        samples[i] <<= 15;
         if (mode == HDCD_ANA_PE) {
-            int pel = (samples[i * stride] >> 16) & 1;
-            int32_t sample = samples[i * stride];
-            samples[i * stride] = _hdcd_analyze_gen(sample, !!(pel && extend), 1);
+            int pel = (samples[i] >> 16) & 1;
+            int32_t sample = samples[i];
+            samples[i] = _hdcd_analyze_gen(sample, !!(pel && extend), 1);
         } else if (mode == HDCD_ANA_TGM && tg_mismatch > 0)
-            samples[i * stride] = _hdcd_analyze_gen(samples[i * stride], 1, 1);
+            samples[i] = _hdcd_analyze_gen(samples[i], 1, 1);
           else if (mode == HDCD_ANA_CDT && cdt_active)
-            samples[i * stride] = _hdcd_analyze_gen(samples[i * stride], 1, 1);
+            samples[i] = _hdcd_analyze_gen(samples[i], 1, 1);
     }
 
     if (gain <= target_gain) {
@@ -1189,11 +1189,11 @@ static int _hdcd_envelope(int32_t *samples, int count, int stride, int gain, int
 {
     /* PEAK_EXT_LEVEL + max_asample == 0x8000 */
     static const int max_asample = sizeof(peaktab) / sizeof(peaktab[0]) - 1;
-    int i;
+    int i, limit = count * stride;
 
     if (extend) {
-        for (i = 0; i < count; i++) {
-            int32_t sample = samples[i * stride];
+        for (i = 0; i < limit; i += stride) {
+            int32_t sample = samples[i];
             int32_t asample = abs(sample) - PEAK_EXT_LEVEL;
             if (asample >= 0) {
                 if (asample > max_asample ) asample = max_asample;
@@ -1201,11 +1201,11 @@ static int _hdcd_envelope(int32_t *samples, int count, int stride, int gain, int
             } else
                 sample <<= 15;
 
-            samples[i * stride] = sample;
+            samples[i] = sample;
         }
     } else {
-        for (i = 0; i < count; i++)
-            samples[i * stride] <<= 15;
+        for (i = 0; i < limit; i += stride)
+            samples[i] <<= 15;
     }
 
     if (gain <= target_gain) {
