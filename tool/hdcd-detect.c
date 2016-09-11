@@ -53,15 +53,15 @@ static void usage(const char* name, int kmode) {
         fprintf(stderr, "Usage:\n"
             "%s [options] [in.wav]\n", name);
         fprintf(stderr,
-            "    input must be a s16le, stereo, 44.1kHz WAV file\n"
-            "    output will be s24le, stereo, 44.1kHz\n"
+            "    input must be a s16le, interlaced stereo WAV file\n"
+            "    output will be s24le, interlaced stereo\n"
             "\n" );
     } else {
         fprintf(stderr, "Usage:\n"
             "%s [options] [-o out.wav] in.wav\n", name);
         fprintf(stderr,
-            "    input must be a s16le, stereo, 44.1kHz WAV file\n"
-            "    output will be s24le, stereo, 44.1kHz\n"
+            "    input must be a s16le, interlaced stereo WAV file\n"
+            "    output will be s24le, interlaced stereo\n"
             "\n" );
         fprintf(stderr, "Alternate usage:\n"
             "%s [options] -c - <in.wav >out.wav\n", name);
@@ -91,18 +91,20 @@ static void usage(const char* name, int kmode) {
         "      \t\t     %s  \t%s\n", amode_name[i], hdcd_str_analyze_mode_desc(i) );
     fprintf(stderr,
         "    -p\t\t output raw s24le PCM samples only without\n"
-        "      \t\t any wav header\n");
+        "      \t\t any wav header\n"
+        "    -e <rate>\t sample rate of raw input\n"
+        "      \t\t     44100 (default), 88200, 176400, 48000, 96000, or 192000\n");
     if (kmode) {
         fprintf(stderr,
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
-        "      \t\t stereo, 44.1kHz (also forces -p)\n"
+        "      \t\t interlaced stereo (also forces -p)\n"
         "    -a\t\t supress output\n"
         "    -i\t\t identify HDCD, implies -a -x, scans the\n"
         "      \t\t first %d frames (%.0fms at 44.1kHz)\n", OPT_KI_SCAN_MAX, (float)(OPT_KI_SCAN_MAX) / 44100 * 1000 );
     } else {
         fprintf(stderr,
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
-        "      \t\t stereo, 44.1kHz (with -k, -r also forces -p)\n");
+        "      \t\t interlaced stereo (with -k, -r also forces -p)\n");
     }
     fprintf(stderr, "\n");
 }

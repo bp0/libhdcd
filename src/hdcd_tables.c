@@ -31,7 +31,7 @@
 
 #include <stdlib.h>
 
-/* #included in hdcd_decdoe2.c */
+/* #included in hdcd_decode2.c */
 
 static const int peak_ext_level = 0x5981; /* + sizeof(peaktab)-1 = 0x8000  */
 static const uint32_t peaktab[0x2680] = {
