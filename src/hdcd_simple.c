@@ -285,21 +285,6 @@ int hdcd_analyze_mode(hdcd_simple *s, int mode)
     return 0;
 }
 
-const char* hdcd_str_analyze_mode_desc(hdcd_ana_mode mode)
-{
-    static const char * const ana_mode_str[] = {
-        HDCD_ANA_OFF_DESC,
-        HDCD_ANA_LLE_DESC,
-        HDCD_ANA_PE_DESC,
-        HDCD_ANA_CDT_DESC,
-        HDCD_ANA_TGM_DESC,
-        HDCD_ANA_PEL_DESC,
-        HDCD_ANA_LTGM_DESC,
-    };
-    if (mode < 0 || mode > 6) return "";
-    return ana_mode_str[mode];
-}
-
 void hdcd_logger_dump_state(hdcd_simple *s)
 {
     int i;

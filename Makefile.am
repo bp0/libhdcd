@@ -29,7 +29,7 @@ hdcd_include_HEADERS = src/hdcd_simple.h src/hdcd_libversion.h src/hdcd_detect.h
 
 lib_LTLIBRARIES = libhdcd.la
 
-libhdcd_la_SOURCES = src/hdcd_decode2.c src/hdcd_simple.c src/hdcd_libversion.c src/hdcd_analyze_tonegen.c
+libhdcd_la_SOURCES = src/hdcd_decode2.c src/hdcd_simple.c src/hdcd_libversion.c src/hdcd_analyze_tonegen.c src/hdcd_strings.c
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libhdcd.pc

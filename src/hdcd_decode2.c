@@ -1450,34 +1450,6 @@ void _hdcd_detect_stereo(hdcd_state_stereo *state, hdcd_detection_data *detect) 
     _hdcd_detect_end(detect, 2);
 }
 
-const char* hdcd_str_detect(hdcd_dv v) {
-    static const char * const det_str[] = {
-        "not detected",
-        "detected (no effect)",
-        "detected"
-    };
-    if (v < 0 || v > 2) return "";
-    return det_str[v];
-}
-
-const char* hdcd_str_pe(hdcd_pe v) {
-    static const char * const pe_str[] = {
-        "never enabled",
-        "enabled intermittently",
-        "enabled permanently"
-    };
-    if (v < 0 || v > 2) return "";
-    return pe_str[v];
-}
-
-const char* hdcd_str_pformat(hdcd_pf v) {
-    static const char * const pf_str[] = {
-        "?", "A", "B", "A+B"
-    };
-    if (v < 0 || v > 3) return "";
-    return pf_str[v];
-}
-
 void _hdcd_detect_str(hdcd_detection_data *detect, char *str, int maxlen) {
     if (!detect) return;
     /* create an HDCD detection data string for logging */
