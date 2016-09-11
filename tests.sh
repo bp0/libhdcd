@@ -193,6 +193,16 @@ do_test "-qx -z cdt"    "ava16.wav"     "eb93df7b31c6b68bd64aff314ca1bc23" 1 "an
 # test for differences from ffmpeg amode
 do_test "-qxp -z pe"    "hdcd.wav"      "63b534310b3d993fa421a18da9552096" 0 "analyzer-pe-fate-match"
 
+# pretend the raw source is some other sample rate, as I don't have any actual non-44.1kHz HDCD to test
+do_test "-qxpr -e 48000"  "hdcd.raw"      "5db465a58d2fd0d06ca944b883b33476" 0 "rate-48000"
+
+# using a test sample with cdt expirations to catch a cdt period calculation change
+do_test "-qxpr -z cdt -e 48000"  "hdcd-mix.raw"  "7eb08190462b8ebd0ce17d363600dc28" 0 "rate-48000-cdt"
+do_test "-qxpr -z cdt -e 88200"  "hdcd-mix.raw"  "5902691d220dbeba69693ada7756a842" 0 "rate-88200-cdt"
+do_test "-qxpr -z cdt -e 96000"  "hdcd-mix.raw"  "82b757c2b7480d623e5e9f2f99f61a3f" 0 "rate-96000-cdt"
+do_test "-qxpr -z cdt -e 176400" "hdcd-mix.raw"  "1afa2b589dc51ea8bb9e7cb07d363f04" 0 "rate-176400-cdt"
+do_test "-qxpr -z cdt -e 192000" "hdcd-mix.raw"  "2f431c0df402438b919f804082eab6b6" 0 "rate-192000-cdt"
+
 echo "passed: $PASSED / $TESTS $AST"
 echo "exit: $EXIT_CODE"
 exit $EXIT_CODE
