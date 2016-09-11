@@ -420,9 +420,10 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, ".total_packets: %d\n", hdcd_detect_total_packets(ctx) );
             fprintf(stderr, ".errors: %d\n", hdcd_detect_errors(ctx) );
             fprintf(stderr, ".peak_extend: [%d] %s\n", pe, hdcd_str_pe(pe) );
-            fprintf(stderr, ".uses_transient_filter: %d\n", hdcd_detect_uses_transient_filter(ctx) );
+            fprintf(stderr, ".uses_transient_filter: %s\n", hdcd_detect_uses_transient_filter(ctx) ? "true" : "false");
             fprintf(stderr, ".max_gain_adjustment: %0.1f dB\n", hdcd_detect_max_gain_adjustment(ctx) );
             fprintf(stderr, ".cdt_expirations: %d\n", hdcd_detect_cdt_expirations(ctx) );
+            fprintf(stderr, ".lle_mismatch: %s\n", hdcd_detect_lle_mismatch(ctx) ? "true" : "false" );
         } else {
             hdcd_detect_str(ctx, dstr, sizeof(dstr));
             fprintf(stderr, "%s\n", dstr);

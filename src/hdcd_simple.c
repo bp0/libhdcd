@@ -221,6 +221,10 @@ float hdcd_detect_max_gain_adjustment(hdcd_simple *ctx)
 int hdcd_detect_cdt_expirations(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.cdt_expirations; else return -1; }
 
+int hdcd_detect_lle_mismatch(hdcd_simple *ctx)
+{ if (ctx) return !!(ctx->state.count_tg_mismatch); else return 0; }
+
+
 /** get a string with an HDCD detection summary */
 void hdcd_detect_str(hdcd_simple *s, char *str, int maxlen)
 {
