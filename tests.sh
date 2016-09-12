@@ -87,10 +87,17 @@ do_test() {
     echo "$TTIT:"
     echo "   bin = $HDCD_DETECT" >"$TOUT.summary"
     echo "   opt = $TOPT" >>"$TOUT.summary"
-    echo "   -o = $TOUT" >>"$TOUT.summary"
+    if [ -n "$THASH" ]; then
+        echo "   -o = $TOUT" >>"$TOUT.summary"
+    fi
     echo "   test_file = $TFILE" >>"$TOUT.summary"
-    "$HDCD_DETECT" $TOPT -o "$TOUT" "$TFILE"
-    HDEX=$?
+    if [ -n "$THASH" ]; then
+        "$HDCD_DETECT" $TOPT -o "$TOUT" "$TFILE"
+        HDEX=$?
+    else
+        "$HDCD_DETECT" $TOPT "$TFILE"
+        HDEX=$?
+    fi
     if ((HDEX != TEXI)); then
         cat "$TOUT.summary"
         echo "hdcd-detect returned unexpected exit code: $HDEX (wanted: $TEXI)"
@@ -98,10 +105,14 @@ do_test() {
         EXIT_CODE=1
         die_on_fail
     else
-        "$MD5SUM" "$TOUT" >"$TOUT.md5"
-        sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5"
-        echo "$THASH" >"$TOUT.md5.target"
-        RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
+        if [ -n "$THASH" ]; then
+            "$MD5SUM" "$TOUT" >"$TOUT.md5"
+            sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5"
+            echo "$THASH" >"$TOUT.md5.target"
+            RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
+        else
+            RESULT=""
+        fi
         if [ -n "$RESULT" ]; then
             cat "$TOUT.summary"
             echo "$RESULT"
@@ -140,7 +151,7 @@ mkmix
 test_pipes
 
 # format:
-#   do_test <options> <test_file> <md5_result> [<exit_code> [<test_title>]]
+#   do_test <options> <test_file> <md5_result> <exit_code> [<test_title>]
 
 # these (hopefully) match:
 #  1.  ffmpeg -i test/hdcd.wav -af hdcd -f s24le md5:
@@ -202,6 +213,11 @@ do_test "-qxpr -z cdt -e 88200"  "hdcd-mix.raw"  "5902691d220dbeba69693ada7756a8
 do_test "-qxpr -z cdt -e 96000"  "hdcd-mix.raw"  "82b757c2b7480d623e5e9f2f99f61a3f" 0 "rate-96000-cdt"
 do_test "-qxpr -z cdt -e 176400" "hdcd-mix.raw"  "1afa2b589dc51ea8bb9e7cb07d363f04" 0 "rate-176400-cdt"
 do_test "-qxpr -z cdt -e 192000" "hdcd-mix.raw"  "2f431c0df402438b919f804082eab6b6" 0 "rate-192000-cdt"
+
+# 20-bit and 24-bit
+do_test "-qx -e 44100:20" "hdcd20.wav" "" 0 "hdcd-20bit-yes"
+do_test "-qx"             "hdcd20.wav" "" 1 "hdcd-20bit-no"
+do_test "-qx"             "hdcd24.wav" "" 0 "hdcd-24bit"
 
 echo "passed: $PASSED / $TESTS $AST"
 echo "exit: $EXIT_CODE"

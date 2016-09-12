@@ -53,14 +53,14 @@ static void usage(const char* name, int kmode) {
         fprintf(stderr, "Usage:\n"
             "%s [options] [in.wav]\n", name);
         fprintf(stderr,
-            "    input must be a s16le, interlaced stereo WAV file\n"
+            "    input should be a s16le, interlaced stereo WAV file\n"
             "    output will be s24le, interlaced stereo\n"
             "\n" );
     } else {
         fprintf(stderr, "Usage:\n"
             "%s [options] [-o out.wav] in.wav\n", name);
         fprintf(stderr,
-            "    input must be a s16le, interlaced stereo WAV file\n"
+            "    input should be a s16le, interlaced stereo WAV file\n"
             "    output will be s24le, interlaced stereo\n"
             "\n" );
         fprintf(stderr, "Alternate usage:\n"
@@ -92,8 +92,12 @@ static void usage(const char* name, int kmode) {
     fprintf(stderr,
         "    -p\t\t output raw s24le PCM samples only without\n"
         "      \t\t any wav header\n"
-        "    -e <rate>\t sample rate of raw input\n"
-        "      \t\t     44100 (default), 88200, 176400, 48000, 96000, or 192000\n");
+        "    -e <rate>[:<bps>]\t sample rate, and bits per sample of raw input\n"
+        "      \t\t\t     rates: 44100 (default), 88200, 176400, 48000, 96000, or 192000\n"
+        "      \t\t\t     bits per sample: 16 (default), 20, or 24\n"
+        "      \t\t\t       20-bit must be stored as 24-bit, but if 20 is not specified\n"
+        "      \t\t\t       the scanner will look for HDCD packets in the wrong place\n"
+        );
     if (kmode) {
         fprintf(stderr,
         "    -r\t\t input raw s16le PCM samples, expected to be\n"
@@ -103,7 +107,7 @@ static void usage(const char* name, int kmode) {
         "      \t\t first %d frames (%.0fms at 44.1kHz)\n", OPT_KI_SCAN_MAX, (float)(OPT_KI_SCAN_MAX) / 44100 * 1000 );
     } else {
         fprintf(stderr,
-        "    -r\t\t input raw s16le PCM samples, expected to be\n"
+        "    -r\t\t input raw PCM samples, expected to be\n"
         "      \t\t interlaced stereo (with -k, -r also forces -p)\n");
     }
     fprintf(stderr, "\n");
@@ -117,12 +121,12 @@ int main(int argc, char *argv[]) {
     FILE *fp_raw_in = NULL;
     wavw_t *wav_out = NULL;
 
-    int format, sample_rate, channels, bits_per_sample;
+    int format, sample_rate, channels, bits_per_sample, bytes_per_sample;
+    int bits_per_sample_out = 24;
     int frame_length = 2048;
     int input_size;
     int set_size;
     uint8_t* input_buf;
-    int16_t* convert_buf;
     int32_t* process_buf;
     int i, c, read, count, full_count = 0, ver_match;
 
@@ -130,12 +134,13 @@ int main(int argc, char *argv[]) {
     int kmode = BUILD_HDCD_EXE_COMPAT,
         opt_ka = 0, opt_ks = 0, opt_kr = 0, opt_ki = 0;
     int opt_help = 0, opt_dump_detect = 0;
-    int opt_raw_out = 0, opt_raw_in = 0, raw_rate = 44100;
+    int opt_raw_out = 0, opt_raw_in = 0, raw_rate = 44100, raw_bps = 16, opt_e = 0;
     int opt_nop = 0, opt_testing = 0;
     int dv; /* used with opt_testing */
 
     hdcd_simple *ctx;
     char dstr[256];
+    char *delim = NULL;
 
     while ((c = getopt(argc, argv, "acde:fhijkno:pqrsvxz:")) != -1) {
         switch (c) {
@@ -177,7 +182,11 @@ int main(int argc, char *argv[]) {
                 opt_force = 1;
                 break;
             case 'e':
+                opt_e = 1;
+                delim = strchr(optarg, ':');
                 raw_rate = atoi(optarg);
+                if (delim)
+                    raw_bps = atoi(delim + 1);
                 break;
             case 'c':
                 outfile = "-";
@@ -270,7 +279,7 @@ int main(int argc, char *argv[]) {
         format = 1;
         channels = 2;
         sample_rate = raw_rate;
-        bits_per_sample = 16;
+        bits_per_sample = raw_bps;
         if (strcmp(infile, "-") == 0) {
             fp_raw_in = stdin;
 #ifdef _WIN32
@@ -297,14 +306,28 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Unsupported WAV format %d\n", format);
             return 1;
         }
-        if (bits_per_sample != 16) {
-            if (!opt_quiet) fprintf(stderr, "Unsupported WAV sample depth %d\n", bits_per_sample);
-            return 1;
-        }
         if (channels != 2) {
             if (!opt_quiet) fprintf(stderr, "Unsupported WAV channels %d\n", channels);
             return 1;
         }
+        if (opt_e) {
+            /* override */
+            sample_rate = raw_rate;
+            bits_per_sample = raw_bps;
+        }
+    }
+
+    bits_per_sample_out = opt_nop ? bits_per_sample : 24;
+
+    if (bits_per_sample != 16) {
+        if (bits_per_sample != 20 && bits_per_sample != 24) {
+            fprintf(stderr, "Unsupported bit depth: %d\n", bits_per_sample);
+            return 1;
+        }
+        if (!opt_quiet)
+            fprintf(stderr, "%d-bit is not fully supported: can be scanned, but not expanded.\n", bits_per_sample);
+        if (outfile)
+            return 1;
     }
 
     if (outfile) {
@@ -312,7 +335,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
             return 1;
         } else {
-            wav_out = wav_write_open(outfile, (opt_nop ? 16 : 24), sample_rate, opt_raw_out);
+            wav_out = wav_write_open(outfile, bits_per_sample_out, sample_rate, opt_raw_out);
             if (!wav_out) return 1;
         }
     }
@@ -340,11 +363,24 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    set_size = channels * (bits_per_sample>>3);
+    if (!opt_quiet) {
+        fprintf(stderr, "Input: s%dle @%dHz %dch %s ", bits_per_sample, sample_rate, channels, opt_raw_in ? "RAW" : "WAV" );
+        if (outfile)
+            fprintf(stderr, "-> Output: s%dle @%dHz %dch %s\n", bits_per_sample_out, sample_rate, channels, opt_raw_out ? "RAW" : "WAV" );
+        else
+            fprintf(stderr, "-> [scan]\n");
+    }
+
+
+    if (bits_per_sample == 20)
+        bytes_per_sample = 3; /* the 20 MSBs of 24-bit */
+    else
+        bytes_per_sample = bits_per_sample >> 3;
+
+    set_size = channels * bytes_per_sample;
     input_size = set_size * frame_length;
     input_buf = (uint8_t*) malloc(input_size);
-    convert_buf = (int16_t*) malloc(input_size);
-    process_buf = (int32_t*) malloc(input_size * 2);
+    process_buf = (int32_t*) malloc(channels * frame_length * sizeof(int32_t));
 
     while (1) {
         if (opt_raw_in)
@@ -352,20 +388,22 @@ int main(int argc, char *argv[]) {
          else
             read = wav_read_data(wav, input_buf, input_size);
 
-        /* endian-swap */
-        for (i = 0; i < read/2; i++) {
-            const uint8_t* in = &input_buf[2*i];
-            convert_buf[i] = in[0] | (in[1] << 8);
+        /* copy into process buffer with endian swap if needed */
+        for (i = 0; i < read / bytes_per_sample; i++) {
+            const uint8_t* in = &input_buf[bytes_per_sample * i];
+            if (bytes_per_sample == 2)
+                process_buf[i] = in[0] | (in[1] << 8) | ((in[1] & 0x80) ? (0xffff << 16) : 0);
+            else if (bytes_per_sample == 3)
+                process_buf[i] = in[0] | (in[1] << 8) | ((in[2] << 16) | (in[2] & 0x80) ? (0xff << 24) : 0);
+
+            if (bits_per_sample == 20)
+                process_buf[i] >>= 4;
         }
         count = read / set_size;
 
         /* if there isn't a full set, then forget the last one */
         if (read % set_size) count--;
         if (count < 0) count = 0;
-
-        /* s16 pcm to s32 pcm to make room for hdcd expansion */
-        for (i = 0; i < count * channels; i++)
-            process_buf[i] = convert_buf[i];
 
         if (!opt_nop) {
             /* in -j testing mode only */
@@ -431,7 +469,6 @@ int main(int argc, char *argv[]) {
     }
 
     free(input_buf);
-    free(convert_buf);
     free(process_buf);
     if (opt_raw_in)
         fclose(fp_raw_in);
