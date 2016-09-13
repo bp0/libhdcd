@@ -94,14 +94,14 @@ EOF
 "$MGCC" -shared -Wl,--out-implib,$LIBNAME.dll.a -Wl,--version-script,libhdcd.ver -s -o $LIBNAME.dll hdcd_decode2.o hdcd_libversion.o hdcd_simple.o hdcd_analyze_tonegen.o hdcd_strings.o libhdcd.res
 rm -f libhdcd.ver
 
-"$MGCC" $CFLAGS -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -s -o hdcd.exe hdcd-detect.o wavreader.o wavout.o $LIBNAME.a hdcd.res
+"$MGCC" $CFLAGS -c -DBUILD_HDCD_EXE_COMPAT ../tool/hdcd-detect.c ../tool/wavio.c
+"$MGCC" -s -o hdcd.exe hdcd-detect.o wavio.o $LIBNAME.a hdcd.res
 rm -f hdcd-detect.o wavreader.o wavout.o
 rm -f hdcd_decode2.o hdcd_simple.o hdcd_libversion.o hdcd_analyze_tonegen.o hdcd_strings.o
 
-"$MGCC" $CFLAGS -c ../tool/hdcd-detect.c ../tool/wavreader.c ../tool/wavout.c
-"$MGCC" -s -o hdcd-detect.exe hdcd-detect.o wavreader.o wavout.o hdcd-detect.res -L. -l$LIBNAME
-rm -f hdcd-detect.o wavreader.o wavout.o
+"$MGCC" $CFLAGS -c ../tool/hdcd-detect.c ../tool/wavio.c
+"$MGCC" -s -o hdcd-detect.exe hdcd-detect.o wavio.o hdcd-detect.res -L. -l$LIBNAME
+rm -f hdcd-detect.o wavio.o
 
 rm -f "libhdcd.res" "hdcd-detect.res" "hdcd.res"
 rm -f "libhdcd.res.rc" "hdcd-detect.res.rc" "hdcd.res.rc"

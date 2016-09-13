@@ -44,10 +44,8 @@ bin_PROGRAMS = hdcd-detect
 
 hdcd_detect_SOURCES = \
 	tool/hdcd-detect.c \
-	tool/wavreader.c \
-	tool/wavreader.h \
-	tool/wavout.c \
-	tool/wavout.h
+	tool/wavio.c \
+	tool/wavio.h
 
 #  Generate ChangeLog file from git.
 #  Also, there's no git availabe when building from the source package and

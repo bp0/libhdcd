@@ -30,13 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef _WIN32
-#include <fcntl.h>
-#include <io.h>
-#endif
 #include "../src/hdcd_simple.h"
-#include "wavreader.h"
-#include "wavout.h"
+#include "wavio.h"
 
 #define OPT_KI_SCAN_MAX 384000 /* two full seconds at max rate */
 
@@ -117,16 +112,13 @@ int main(int argc, char *argv[]) {
     const char *infile = NULL;
     const char *outfile = NULL;
     const char dashfile[] = "-";
-    void *wav = NULL;
-    FILE *fp_raw_in = NULL;
-    wavw_t *wav_out = NULL;
+    wavio *wav = NULL;
+    wavio *wav_out = NULL;
 
-    int format, sample_rate, channels, bits_per_sample, bytes_per_sample;
+    int format, sample_rate, channels, bits_per_sample;
     int bits_per_sample_out = 24;
     int frame_length = 2048;
-    int input_size;
-    int set_size;
-    uint8_t* input_buf;
+    int nb_samples;
     int32_t* process_buf;
     int i, c, read, count, full_count = 0, ver_match;
 
@@ -280,17 +272,10 @@ int main(int argc, char *argv[]) {
         channels = 2;
         sample_rate = raw_rate;
         bits_per_sample = raw_bps;
-        if (strcmp(infile, "-") == 0) {
-            fp_raw_in = stdin;
-#ifdef _WIN32
-            setmode(fileno(stdin), O_BINARY);
-#endif
-        } else {
-            fp_raw_in = fopen(infile, "rb");
-            if (!fp_raw_in) {
-                if (!opt_quiet) fprintf(stderr, "Unable to open raw pcm file %s\n", infile);
-                return 1;
-            }
+        wav = wav_read_open_raw(infile, channels, sample_rate, (bits_per_sample == 20) ? 24 : bits_per_sample);
+        if (!wav) {
+            if (!opt_quiet) fprintf(stderr, "Unable to open raw pcm file %s\n", infile);
+            return 1;
         }
     } else {
         wav = wav_read_open(infile);
@@ -335,7 +320,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
             return 1;
         } else {
-            wav_out = wav_write_open(outfile, bits_per_sample_out, sample_rate, opt_raw_out);
+            wav_out = wav_write_open(outfile, channels, sample_rate, bits_per_sample_out, opt_raw_out);
             if (!wav_out) return 1;
         }
     }
@@ -372,40 +357,27 @@ int main(int argc, char *argv[]) {
     }
 
 
-    if (bits_per_sample == 20)
-        bytes_per_sample = 3; /* the 20 MSBs of 24-bit */
-    else
-        bytes_per_sample = bits_per_sample >> 3;
-
-    set_size = channels * bytes_per_sample;
-    input_size = set_size * frame_length;
-    input_buf = (uint8_t*) malloc(input_size);
     process_buf = (int32_t*) malloc(channels * frame_length * sizeof(int32_t));
+    nb_samples = channels * frame_length;
 
     while (1) {
-        if (opt_raw_in)
-            read = fread(input_buf, 1, input_size, fp_raw_in);
-         else
-            read = wav_read_data(wav, input_buf, input_size);
-
-        /* copy into process buffer with endian swap if needed */
-        for (i = 0; i < read / bytes_per_sample; i++) {
-            const uint8_t* in = &input_buf[bytes_per_sample * i];
-            if (bytes_per_sample == 2)
-                process_buf[i] = in[0] | (in[1] << 8) | ((in[1] & 0x80) ? (0xffff << 16) : 0);
-            else if (bytes_per_sample == 3)
-                process_buf[i] = in[0] | (in[1] << 8) | ((in[2] << 16) | (in[2] & 0x80) ? (0xff << 24) : 0);
-
-            if (bits_per_sample == 20)
-                process_buf[i] >>= 4;
-        }
-        count = read / set_size;
-
+        read = wav_read_samples(wav, process_buf, nb_samples);
+        count = read / channels;
         /* if there isn't a full set, then forget the last one */
-        if (read % set_size) count--;
+        if (read % channels) count--;
         if (count < 0) count = 0;
 
         if (!opt_nop) {
+            /* shift to put the LSB in bit 0 */
+            for (i = 0; i < read; i++) {
+                if (bits_per_sample == 16)
+                    process_buf[i] >>= 16;
+                if (bits_per_sample == 20)
+                    process_buf[i] >>= 12;
+                if (bits_per_sample == 24)
+                    process_buf[i] >>= 8;
+            }
+
             /* in -j testing mode only */
             if (opt_testing)
                 dv = hdcd_scan(ctx, process_buf, count, 0);
@@ -422,7 +394,7 @@ int main(int argc, char *argv[]) {
 
 
         if (outfile) {
-            wav_write(wav_out, process_buf, count * channels);
+            wav_write_samples(wav_out, process_buf, count * channels);
         }
 
         full_count += count;
@@ -434,7 +406,7 @@ int main(int argc, char *argv[]) {
             if (full_count >= OPT_KI_SCAN_MAX)
                 break;
         }
-        if (read < input_size) break; /* eof */
+        if (read < nb_samples) break; /* eof */
     }
     if (xmode) xmode = !hdcd_detected(ctx); /* return non-zero if (-x) mode and HDCD not detected */
 
@@ -468,14 +440,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    free(input_buf);
     free(process_buf);
-    if (opt_raw_in)
-        fclose(fp_raw_in);
-    else
-        wav_read_close(wav);
+    wav_close(wav);
+    if (outfile) wav_close(wav_out);
     hdcd_free(ctx);
-    if (outfile) wav_write_close(wav_out);
 
     return xmode;
 }
