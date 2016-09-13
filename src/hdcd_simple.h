@@ -70,7 +70,7 @@ void hdcd_detect_str(hdcd_simple *ctx, char *str, int maxlen); /* [256] should b
             int hdcd_detect_uses_transient_filter(hdcd_simple *ctx); /**< bool, 1 if the tf flag was detected */
             float hdcd_detect_max_gain_adjustment(hdcd_simple *ctx); /**< in dB, expected in the range -7.5 to 0.0 */
             int hdcd_detect_cdt_expirations(hdcd_simple *ctx);       /**< -1 for never set, 0 for set but never expired */
-            int hdcd_detect_lle_mismatch(hdcd_simple *ctx);          /**< bool, if a mismatch in gain values between channels ever occurred */
+            int hdcd_detect_lle_mismatch(hdcd_simple *ctx);          /**< number of samples with a mismatch in gain values between channels */
 
 
 /** set a logging callback or use the default (print to stderr) */

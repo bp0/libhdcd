@@ -222,7 +222,7 @@ int hdcd_detect_cdt_expirations(hdcd_simple *ctx)
 { if (ctx) return ctx->detect.cdt_expirations; else return -1; }
 
 int hdcd_detect_lle_mismatch(hdcd_simple *ctx)
-{ if (ctx) return !!(ctx->state.count_tg_mismatch); else return 0; }
+{ if (ctx) return ctx->state.count_tg_mismatch; else return 0; }
 
 
 /** get a string with an HDCD detection summary */

@@ -490,7 +490,6 @@ static hdcd_control_result _hdcd_control_stereo(hdcd_state_stereo *state, int *p
     if (target_gain[0] == target_gain[1])
         state->val_target_gain = target_gain[0];
     else {
-        state->count_tg_mismatch++;
         if (!(state->channel[0].decoder_options & HDCD_FLAG_TGM_LOG_OFF)) {
             _hdcd_log(state->channel[0].log,
                "hdcd error: Unmatched target_gain near %d: tg0: %0.1f, tg1: %0.1f, lvg: %0.1f\n",
@@ -564,6 +563,9 @@ void _hdcd_process_stereo(hdcd_state_stereo *state, int32_t *samples, int count)
         run = _hdcd_scan_x(&state->channel[0], 2, samples + lead * stride, count - lead, 0) + lead;
         envelope_run = run - 1;
 
+        if (ctlret == HDCD_TG_MISMATCH)
+            state->count_tg_mismatch += envelope_run;
+
         if (state->ana_mode) {
             gain[0] = _hdcd_analyze(samples, envelope_run, stride, gain[0], state->val_target_gain, peak_extend[0],
                 state->ana_mode,
@@ -585,6 +587,9 @@ void _hdcd_process_stereo(hdcd_state_stereo *state, int32_t *samples, int count)
         ctlret = _hdcd_control_stereo(state, &peak_extend[0], &peak_extend[1]);
     }
     if (lead > 0) {
+        if (ctlret == HDCD_TG_MISMATCH)
+            state->count_tg_mismatch += lead;
+
         if (state->ana_mode) {
             gain[0] = _hdcd_analyze(samples, lead, stride, gain[0], state->val_target_gain, peak_extend[0],
                 state->ana_mode,

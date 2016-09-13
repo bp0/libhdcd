@@ -129,7 +129,7 @@ typedef struct {
     hdcd_state channel[2];      /**< individual channel states       */
     hdcd_ana_mode ana_mode;     /**< analyze mode                    */
     int val_target_gain;        /**< last valid matching target_gain */
-    int count_tg_mismatch;      /**< target_gain mismatch occurred.  */
+    int count_tg_mismatch;      /**< target_gain mismatch samples  */
 } hdcd_state_stereo;
 
 /* n-channel versions */

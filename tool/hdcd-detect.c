@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, ".uses_transient_filter: %s\n", hdcd_detect_uses_transient_filter(ctx) ? "true" : "false");
             fprintf(stderr, ".max_gain_adjustment: %0.1f dB\n", hdcd_detect_max_gain_adjustment(ctx) );
             fprintf(stderr, ".cdt_expirations: %d\n", hdcd_detect_cdt_expirations(ctx) );
-            fprintf(stderr, ".lle_mismatch: %s\n", hdcd_detect_lle_mismatch(ctx) ? "true" : "false" );
+            fprintf(stderr, ".lle_mismatch: %d sample(s)\n", hdcd_detect_lle_mismatch(ctx) );
         } else {
             hdcd_detect_str(ctx, dstr, sizeof(dstr));
             fprintf(stderr, "%s\n", dstr);
