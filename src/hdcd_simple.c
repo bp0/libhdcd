@@ -67,17 +67,18 @@ hdcd_simple *hdcd_new(void)
 int hdcd_set_sample_rate(hdcd_simple *s, int rate)
 {
     if (!s) return 0;
-    if (rate == 44100
-        || rate == 88200
-        || rate == 176400
-        || rate == 48000
-        || rate == 96000
-        || rate == 192000) {
-        s->rate = rate;
-        hdcd_reset(s);
-        return 1;
-    } else
-        return 0;
+    switch(rate) {
+        case 44100:
+        case 88200:
+        case 176400:
+        case 48000:
+        case 96000:
+        case 192000:
+            s->rate = rate;
+            hdcd_reset(s);
+            return 1;
+    }
+    return 0;
 }
 
 static void _hdcd_simple_reset_state(hdcd_state_stereo *state, int rate)
