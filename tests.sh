@@ -74,7 +74,7 @@ test_pipes() {
         echo "-- PASSED"
         ((PASSED++))
     fi
-    rm -f "$TOUT.md5" "$TOUT.md5.k" "$TOUT.md5.target"
+    rm -f "$TOUT.md5" "$TOUT.md5.k" "$TOUT.md5.target" "$TOUT.md5.k.target"
 }
 
 do_test() {
