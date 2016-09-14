@@ -30,7 +30,8 @@ typedef struct wavio wavio;
 wavio* wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw);
 int wav_write_samples(wavio *wav, const int32_t *samples, int nb_samples);
 
-wavio* wav_read_open(const char *filename);
+wavio* wav_read_open(const char *filename); /* dumber, but working with pipes version */
+wavio* wav_read_open_ms(const char *filename); /* Martin Storsjo's version */
 wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, int bits_per_sample);
 int wav_read(wavio* wav, unsigned char* data, unsigned int length);
 int wav_read_samples(wavio* wav, int32_t* samples, int nb_samples);

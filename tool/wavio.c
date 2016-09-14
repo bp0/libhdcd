@@ -223,6 +223,66 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
 
 wavio* wav_read_open(const char *filename)
 {
+    uint32_t tag_RIFF = TAG('R', 'I', 'F', 'F');
+    uint32_t tag_WAVE = TAG('W', 'A', 'V', 'E');
+    uint32_t tag_fmt = TAG('f', 'm', 't', ' ');
+    uint32_t tag_data = TAG('d', 'a', 't', 'a');
+    uint32_t scan_buf = 0;
+    int c, state = 0;
+
+    wavio* wav = malloc(sizeof(wavio));
+    memset(wav, 0, sizeof(wavio));
+
+    if (!strcmp(filename, "-")) {
+        wav->fp = stdin;
+#ifdef _WIN32
+        setmode(fileno(stdin), O_BINARY);
+#endif
+    } else
+        wav->fp = fopen(filename, "rb");
+    if (wav->fp == NULL) {
+        free(wav);
+        return NULL;
+    }
+
+    while(1) {
+        c = fgetc(wav->fp);
+        if (c == EOF || c < 0 || c > 255) break;
+        scan_buf = (scan_buf << 8) | c;
+        if (scan_buf == tag_RIFF) {
+            state = 1; continue;
+        }
+        if (scan_buf == tag_WAVE) {
+            state = 2; continue;
+        }
+        if (scan_buf == tag_fmt && state == 2) {
+            /*fmt_len          =*/ read_int32(wav);
+            wav->format          = read_int16(wav);
+            wav->channels        = read_int16(wav);
+            wav->sample_rate     = read_int32(wav);
+            wav->byte_rate       = read_int32(wav);
+            wav->block_align     = read_int16(wav);
+            wav->bits_per_sample = read_int16(wav);
+            if (wav->format == 0xfffe) {
+                skip(wav->fp, 8);
+                wav->format      = read_int16(wav);
+            }
+            state = 3;
+            continue;
+        }
+        if (scan_buf == tag_data && state == 3) {
+            wav->data_length = read_int32(wav);
+            wav->streamed = 1;
+            return wav;
+        }
+    }
+
+    free(wav);
+    return NULL;
+}
+
+wavio* wav_read_open_ms(const char *filename)
+{
     wavio* wr = malloc(sizeof(wavio));
     long data_pos = 0;
     memset(wr, 0, sizeof(wavio));
