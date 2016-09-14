@@ -50,17 +50,20 @@ die_on_fail() {
 
 test_pipes() {
     ((TESTS++))
-    TFILE="test/hdcd.raw"
+    TFILE="test/hdcd.wav"
     THASH="5db465a58d2fd0d06ca944b883b33476"
+    TFILEK="test/hdcd.raw"
+    THASHK="5db465a58d2fd0d06ca944b883b33476"
     TOUT="$TMP/hdcd_tests_pipes_$$"
     echo "-test-pipes:"
-    "$HDCD_DETECT" -qcrp - <"$TFILE" |"$MD5SUM" >"$TOUT.md5"
-    "$HDCD_DETECT" -kqcr <"$TFILE" |"$MD5SUM" >"$TOUT.md5.k"
+    cat "$TFILE"  | "$HDCD_DETECT" -qcp - |"$MD5SUM" >"$TOUT.md5"
+    cat "$TFILEK" | "$HDCD_DETECT" -kqcr  |"$MD5SUM" >"$TOUT.md5.k"
     sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5"
     sed -i -e "s#^\([0-9a-f]*\).*#\1#" "$TOUT.md5.k"
     echo "$THASH" >"$TOUT.md5.target"
+    echo "$THASHK" >"$TOUT.md5.k.target"
     RESULT=$(diff "$TOUT.md5" "$TOUT.md5.target")
-    RESULTK=$(diff "$TOUT.md5.k" "$TOUT.md5.target")
+    RESULTK=$(diff "$TOUT.md5.k" "$TOUT.md5.k.target")
     if [ -n "$RESULT" ] || [ -n "$RESULTK" ]; then
         echo "N: $RESULT"
         echo "K: $RESULTK"
