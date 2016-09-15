@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
     }
 
     ctx = hdcd_new();
-    if (!hdcd_set_sample_rate(ctx, sample_rate)) {
+    if (!hdcd_reset_ext(ctx, sample_rate, bits_per_sample)) {
         if (!opt_quiet) fprintf(stderr, "Unusable sample rate %d\n", sample_rate);
         return 1;
     }

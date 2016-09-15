@@ -37,6 +37,7 @@ struct hdcd_simple {
     int smode;
     int check_input;
     int rate;
+    int bits;
 };
 
 /** set stereo processing mode, only used internally */
@@ -59,26 +60,10 @@ hdcd_simple *hdcd_new(void)
         _hdcd_log_init(&s->logger, NULL, NULL);
         _hdcd_log_disable(&s->logger);
         s->rate = 44100;
+        s->bits = 16;
         hdcd_reset(s);
     }
     return s;
-}
-
-int hdcd_set_sample_rate(hdcd_simple *s, int rate)
-{
-    if (!s) return 0;
-    switch(rate) {
-        case 44100:
-        case 88200:
-        case 176400:
-        case 48000:
-        case 96000:
-        case 192000:
-            s->rate = rate;
-            hdcd_reset(s);
-            return 1;
-    }
-    return 0;
 }
 
 static void _hdcd_simple_reset_state(hdcd_state_stereo *state, int rate)
@@ -87,16 +72,48 @@ static void _hdcd_simple_reset_state(hdcd_state_stereo *state, int rate)
     _hdcd_reset_stereo(state, rate, 0, HDCD_FLAG_TGM_LOG_OFF);
 }
 
-/** on a song change or something, reset the decoding state */
-void hdcd_reset(hdcd_simple *s)
+int hdcd_reset_ext(hdcd_simple *s, int rate, int bits)
 {
-    if (!s) return;
+    if (!s) return 0;
+    switch(rate) {
+        case 0:
+            rate = 44100;
+        case 44100:
+        case 88200:
+        case 176400:
+        case 48000:
+        case 96000:
+        case 192000:
+            break;
+        default:
+            return 0;
+    }
+    switch(bits) {
+        case 0:
+            bits = 16;
+        case 16:
+        case 20:
+        case 24:
+            break;
+        default:
+            return 0;
+    }
+    s->rate = rate;
+    s->bits = bits;
     s->check_input = 0;
     _hdcd_simple_reset_state(&s->state, s->rate);
     _hdcd_detect_reset(&s->detect);
     _hdcd_attach_logger(&s->state, &s->logger);
     hdcd_analyze_mode(s, 0);
     hdcd_smode(s, 1);
+    return 1;
+}
+
+/** on a song change or something, reset the decoding state */
+void hdcd_reset(hdcd_simple *s)
+{
+    if (!s) return;
+    hdcd_reset_ext(s, 0, 0);
 }
 
 static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count)

@@ -46,6 +46,8 @@ hdcd_simple *hdcd_new(void);
 void hdcd_process(hdcd_simple *ctx, int *samples, int count);
 /** on a song change or something, reset the decoding state */
 void hdcd_reset(hdcd_simple *ctx);
+/** version of hdcd_reset when not 44100Hz or 16-bit */
+int hdcd_reset_ext(hdcd_simple *ctx, int rate, int bits);
 /** free the context when finished */
 void hdcd_free(hdcd_simple *ctx);
 
