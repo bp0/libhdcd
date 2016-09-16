@@ -165,19 +165,20 @@ do_test "-ksxp" "hdcd.wav"     "5db465a58d2fd0d06ca944b883b33476" 0 "hdcd-output
 do_test "-ksxr" "hdcd.raw"     "5db465a58d2fd0d06ca944b883b33476" 0 "hdcd-output-pcm-only-cjk-hdcd-compat-raw"
 
 # hdcd.wav has PE only
-do_test "-qx"  "hdcd.wav"     "835d9eca6c8e762f512806b0eeac42bd" 0 "hdcd-output-wav"
+# output as wav to test the wav writer
+do_test "-qx"  "hdcd.wav"     "a5bc65fa360802a19403fa4afd6338af" 0 "hdcd-output-wav"
 
 # hdcd-all.wav has PE, LLE, and TF
-do_test "-qx" "hdcd-all.wav"  "da671fe3351ffc6e156913b88911829c" 0
+do_test "-qxp" "hdcd-all.wav"  "e8cdf508b7805ed49aaba2f3e12c1bfe" 0
 
 # hdcd-err.wav has encoding errors
-do_test "-qx" "hdcd-err.wav"  "fbc703becf0502e4f1c44c9af8f7db8d" 0
+do_test "-qxp" "hdcd-err.wav"  "0f7c3581950e57564d72ad96200bb648" 0
 
 # hdcd-ftm.wav is from For the Masses (1998), a notorious HDCD-CD.
-do_test "-qx" "hdcd-ftm.wav"  "c7b16edf2b7c36531b551f791da986f6" 0 "for-the-masses"
+do_test "-qxp" "hdcd-ftm.wav"  "c8c094ad88f43cb9eda1fa2d9b121664" 0 "for-the-masses"
 
 # hdcd-tgm has a very short target gain mismatch
-do_test "-qx" "hdcd-tgm.wav"  "f3cf4d7fbe2ffbab53a3698730c140d1" 0
+do_test "-qxp" "hdcd-tgm.wav"  "c512b16b00f867105c68ef93fea08fb7" 0
 
 # hdcd-pfa has packet format A and is "special mode" with a max gain adjust of -7.0dB
 do_test "-qxp" "hdcd-pfa.wav"  "760628f8e3c81e7f7f94fdf594decd61" 0 "pfa-special-mode"
@@ -185,7 +186,7 @@ do_test "-qxp" "hdcd-pfa.wav"  "760628f8e3c81e7f7f94fdf594decd61" 0 "pfa-special
 # ava16 is not HDCD, but has a coincidental valid HDCD packet that
 # applies -6dB in one channel for a short time if target_gain matching is
 # not happening. HDCD should be "not detected"
-do_test "-qx" "ava16.wav"     "a44fea1a2c825ed24f57f35a328d7874" 1
+do_test "-qxp" "ava16.wav"     "b179a5cc8d8a0b8461236807ae55bdd3" 1
 
 # tests -n (nop) in mkmix, then tests mixed packet format
 do_test "-qxrp"  "hdcd-mix.raw"  "6a3cf7f920f419477ada264cc63b40da" 0 "hdt-nop-cat-mixed-pf"
@@ -194,15 +195,15 @@ do_test "-qxrp"  "hdcd-mix.raw"  "6a3cf7f920f419477ada264cc63b40da" 0 "hdt-nop-c
 do_test "-qxrpn" "hdcd.raw"      "ca3ce18c754bd008d7f308c2892cb795" 1 "hdt-nop"
 
 # analyzer tests
-do_test "-qx -z pe"     "hdcd-all.wav"  "8dad6ce72136e973f7d5ee61e35b501c" 0 "analyzer-pe"
-do_test "-qx -z lle"    "hdcd-all.wav"  "26cf3b5a5ae999c6358f4ea79b01c38a" 0 "analyzer-lle"
-do_test "-qxr -z cdt"   "hdcd-mix.raw"  "ec9963ed629ee020a593a047612fcc9f" 0 "analyzer-cdt"
-do_test "-qx -z tgm"    "hdcd-tgm.wav"  "6e1a07529d4cfb16e8e3639d75a7083d" 0 "analyzer-tgm"
-do_test "-qx -z pel"    "ava16.wav"     "63b6f873049794eb7a899d9a5c6c8a5e" 1 "analyzer-pel"
-do_test "-qx -z tgm"    "hdcd-ftm.wav"  "aba5385269206f2dc63b04c4dfdd05c9" 0 "analyzer-tgm-for-the-masses"
-do_test "-qx -z ltgm"   "hdcd-ftm.wav"  "f386afaa1a1cd4e47c21f0b8dc541e21" 0 "analyzer-lgtm-for-the-masses"
-do_test "-qx -z ltgm"   "ava16.wav"     "aed4aa16a7cb6c13ec72d7715ab78a10" 1 "analyzer-lgtm-nch-process-false-positive"
-do_test "-qx -z cdt"    "ava16.wav"     "eb93df7b31c6b68bd64aff314ca1bc23" 1 "analyzer-cdt-nch-process-false-positive"
+do_test "-qxp  -z pe"     "hdcd-all.wav"  "6c180e3e734f0d670221e99109a9460d" 0 "analyzer-pe"
+do_test "-qxp  -z lle"    "hdcd-all.wav"  "a097872ca7f7ffc94b133a84accc928f" 0 "analyzer-lle"
+do_test "-qxrp -z cdt"    "hdcd-mix.raw"  "b10600fc87011c6cc6c048d1a4e7da8d" 0 "analyzer-cdt"
+do_test "-qxp  -z tgm"    "hdcd-tgm.wav"  "5dbaeb406e30ce1398eca609c9f357aa" 0 "analyzer-tgm"
+do_test "-qxp  -z pel"    "ava16.wav"     "f79cb2b91e21d2b1fa07d007a71c6bc9" 1 "analyzer-pel"
+do_test "-qxp  -z tgm"    "hdcd-ftm.wav"  "b44f967875b4c2f2225dbebb16d3e3df" 0 "analyzer-tgm-for-the-masses"
+do_test "-qxp  -z ltgm"   "hdcd-ftm.wav"  "0eab0a7d41fd8e0c35266cbd8cb834ac" 0 "analyzer-lgtm-for-the-masses"
+do_test "-qxp  -z ltgm"   "ava16.wav"     "33c2de6018e2debab2b3384696c83abb" 1 "analyzer-lgtm-nch-process-false-positive"
+do_test "-qxp  -z cdt"    "ava16.wav"     "d1a8dab7a6fb718d5e09031b45e8b5b5" 1 "analyzer-cdt-nch-process-false-positive"
 
 # test for differences from ffmpeg amode
 do_test "-qxp -z pe"    "hdcd.wav"      "63b534310b3d993fa421a18da9552096" 0 "analyzer-pe-fate-match"
