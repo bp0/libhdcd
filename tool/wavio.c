@@ -42,6 +42,9 @@ struct wavio {
     int32_t byte_rate;
     int16_t block_align;
 
+    int16_t valid_bits_per_sample;
+    int32_t channel_mask;
+
     int streamed;
     int raw_pcm_only;
     int length_loc;
@@ -50,6 +53,61 @@ struct wavio {
     uint8_t* input_buf;
     int input_buf_size;
 };
+
+static int duh_channel_mask(int channels)
+{
+    switch(channels) {
+        case 1:
+            return 0x0004;
+        case 2:
+            return 0x0003;
+        case 4:
+            return 0x0033;
+    };
+    return 0;
+}
+
+static int looks_ok(wavio *wav)
+{
+    if (!wav) return 0;
+    if (wav->format != 1)
+        return 0;
+    switch(wav->sample_rate) {
+        case 22050:
+        case 44100:
+        case 88200:
+        case 176400:
+        case 48000:
+        case 96000:
+        case 192000:
+            break;
+        default:
+            return 0;
+    }
+    switch(wav->valid_bits_per_sample) {
+        case 20:
+            if (wav->bits_per_sample != 24) return 0;
+        case 8:
+        case 16:
+        case 24:
+        case 32:
+        case 64:
+            break;
+        default:
+            return 0;
+    }
+    if (wav->channels < 1 || wav->channels > 9)
+        return 0;
+    if (!wav->channel_mask)
+        return 0;
+    if (wav->bits_per_sample % 8 || !wav->bits_per_sample)
+        return 0;
+    if (wav->byte_rate != wav->channels * wav->sample_rate * wav->bits_per_sample/8)
+        return 0;
+    if (wav->block_align != wav->channels * wav->bits_per_sample/8)
+        return 0;
+    return 1;
+}
 
 static int fwrite_int8(uint8_t v, FILE *fp) {
     return fwrite(&v, 1, 1, fp);
@@ -84,17 +142,27 @@ static int fwrite_int32el(int32_t v, FILE *fp) {
 
 wavio *wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw)
 {
+    int ex = 0;
     wavio* wav = malloc(sizeof(wavio));
     if (!wav) return NULL;
     memset(wav, 0, sizeof(*wav));
 
     wav->channels = channels;
+    wav->channel_mask = duh_channel_mask(channels);
     wav->sample_rate = sample_rate;
-    wav->bits_per_sample = bits_per_sample;
+    if (bits_per_sample % 8) {
+        wav->valid_bits_per_sample = bits_per_sample;
+        wav->bits_per_sample = bits_per_sample + bits_per_sample % 8;
+        ex = 1;
+    } else {
+        wav->bits_per_sample =
+        wav->valid_bits_per_sample = bits_per_sample;
+    }
+    if (wav->bits_per_sample > 16 || channels > 2)
+        ex = 1;
     wav->raw_pcm_only = raw;
-
-    wav->byte_rate = channels * sample_rate * bits_per_sample / 8;
-    wav->block_align = channels * bits_per_sample / 8;
+    wav->byte_rate = channels * sample_rate * wav->bits_per_sample / 8;
+    wav->block_align = channels * wav->bits_per_sample / 8;
     wav->write = 1;
 
     if (strcmp(filename, "-") == 0) {
@@ -113,12 +181,21 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
         fwrite("RIFF", 1, 4, wav->fp);
         wav->length_loc = ftell(wav->fp);
         fwrite_int32el(0, wav->fp);
-        fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, wav->fp);
+        if (ex)
+            fwrite("WAVEfmt \x28\x00\x00\x00\xFE\xFF", 1, 14, wav->fp);
+        else
+            fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, wav->fp);
         fwrite_int16el(wav->channels, wav->fp);
         fwrite_int32el(wav->sample_rate, wav->fp);
         fwrite_int32el(wav->byte_rate, wav->fp);
         fwrite_int16el(wav->block_align, wav->fp);
         fwrite_int16el(wav->bits_per_sample, wav->fp);
+        if (ex) {
+            fwrite_int16el(22, wav->fp);
+            fwrite_int16el(wav->valid_bits_per_sample, wav->fp);
+            fwrite_int32el(wav->channel_mask, wav->fp);
+            fwrite("\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71", 1, 16, wav->fp);
+        }
         fwrite("data", 1, 4, wav->fp);
         wav->data_size_loc = ftell(wav->fp);
         fwrite_int32el(0, wav->fp);
@@ -210,13 +287,19 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
         return NULL;
     }
 
+    if (bits_per_sample % 8) {
+        wav->valid_bits_per_sample = bits_per_sample;
+        wav->bits_per_sample = bits_per_sample + bits_per_sample % 8;
+    } else {
+        wav->bits_per_sample =
+        wav->valid_bits_per_sample = bits_per_sample;
+    }
     wav->channels = channels;
+    wav->channel_mask = duh_channel_mask(channels);
     wav->sample_rate = sample_rate;
-    wav->bits_per_sample = bits_per_sample;
+    wav->byte_rate = channels * sample_rate * wav->bits_per_sample/8;
+    wav->block_align = channels * wav->bits_per_sample/8;
     wav->raw_pcm_only = 1;
-
-    wav->byte_rate = channels * sample_rate * bits_per_sample/8;
-    wav->block_align = channels * bits_per_sample/8;
     wav->streamed = 1;
     return wav;
 }
@@ -225,7 +308,7 @@ wavio* wav_read_open(const char *filename)
 {
     uint32_t tag_RIFF = TAG('R', 'I', 'F', 'F');
     uint32_t tag_WAVE = TAG('W', 'A', 'V', 'E');
-    uint32_t tag_fmt = TAG('f', 'm', 't', ' ');
+    uint32_t tag_fmt  = TAG('f', 'm', 't', ' ');
     uint32_t tag_data = TAG('d', 'a', 't', 'a');
     uint32_t scan_buf = 0;
     int c, state = 0;
@@ -264,16 +347,25 @@ wavio* wav_read_open(const char *filename)
             wav->block_align     = read_int16(wav);
             wav->bits_per_sample = read_int16(wav);
             if (wav->format == 0xfffe) {
-                skip(wav->fp, 8);
-                wav->format      = read_int16(wav);
+                /*cb_size                =*/ read_int16(wav);
+                wav->valid_bits_per_sample = read_int16(wav);
+                wav->channel_mask          = read_int32(wav);
+                wav->format                = read_int16(wav);
             }
             state = 3;
             continue;
         }
         if (scan_buf == tag_data && state == 3) {
             wav->data_length = read_int32(wav);
+            if (!wav->valid_bits_per_sample)
+                wav->valid_bits_per_sample = wav->bits_per_sample;
+            if (!wav->channel_mask)
+                wav->channel_mask = duh_channel_mask(wav->channels);
+            if (!wav->channel_mask) break;
             wav->streamed = 1;
-            return wav;
+
+            if (looks_ok(wav)) return wav;
+            break;
         }
     }
 
@@ -345,8 +437,10 @@ wavio* wav_read_open_ms(const char *filename)
                         // Insufficient data for waveformatex
                         break;
                     }
-                    skip(wr->fp, 8);
-                    wr->format = read_int32(wr);
+                    skip(wr->fp, 2);
+                    wr->valid_bits_per_sample = read_int16(wr);
+                    wr->channel_mask          = read_int32(wr);
+                    wr->format                = read_int32(wr);
                     skip(wr->fp, sublength - 28);
                 } else {
                     skip(wr->fp, sublength - 16);
