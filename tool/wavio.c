@@ -61,18 +61,23 @@ static int duh_channel_mask(int channels)
             return 0x0004;
         case 2:
             return 0x0003;
+        /* anything else would just be a guess: */
         case 4:
-            return 0x0033;
+            return 0x0033; /* (LF RF LR RR) */
+            /*or maybe 0x0107 (L R C S)*/
     };
     return 0;
 }
 
 static int looks_ok(wavio *wav)
 {
+    /* some checks to see if the WAV header information looks valid */
     if (!wav) return 0;
-    if (wav->format != 1)
-        return 0;
+    if (wav->format != 1 && wav->format != 3)
+        return 0; /* unsupported format */
     switch(wav->sample_rate) {
+        case 8000:
+        case 11025:
         case 22050:
         case 44100:
         case 88200:
@@ -82,30 +87,28 @@ static int looks_ok(wavio *wav)
         case 192000:
             break;
         default:
-            return 0;
+            return 0; /* unusual sample rate */
     }
-    switch(wav->valid_bits_per_sample) {
-        case 20:
-            if (wav->bits_per_sample != 24) return 0;
-        case 8:
-        case 16:
-        case 24:
-        case 32:
-        case 64:
-            break;
-        default:
-            return 0;
-    }
+    if (!wav->bits_per_sample)
+        return 0; /* or division by zero in next check */
+    if (!wav->bits_per_sample % 8)
+        return 0; /* bits_per_samples must be byte aligned */
+    if (!wav->valid_bits_per_sample)
+        return 0; /* should be copied from bits_per_sample if not specified */
+    if (wav->valid_bits_per_sample > wav->bits_per_sample)
+        return 0; /* valid_bps does not fit into bps */
+    if (wav->format == 1 && wav->bits_per_sample > 32)
+        return 0; /* bps > 32 not supported because wav_read/write_samples() uses int32_t for samples */
+    if (wav->format == 3 && !(wav->bits_per_sample == 32 || wav->bits_per_sample == 64) )
+        return 0; /* float(32) or double(64), reading with wav_read_samples() is potentially lossy */
     if (wav->channels < 1 || wav->channels > 9)
-        return 0;
+        return 0; /* mono to 8.1 */
     if (!wav->channel_mask)
-        return 0;
-    if (wav->bits_per_sample % 8 || !wav->bits_per_sample)
-        return 0;
+        return 0; /* must be something, even a guess by duh_channel_mask() */
     if (wav->byte_rate != wav->channels * wav->sample_rate * wav->bits_per_sample/8)
-        return 0;
+        return 0; /* serves to check valid header was read */
     if (wav->block_align != wav->channels * wav->bits_per_sample/8)
-        return 0;
+        return 0; /* same */
     return 1;
 }
 
@@ -309,7 +312,7 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
     return wav;
 }
 
-wavio* wav_read_open(const char *filename)
+wavio* wav_read_open(const char *filename, int dump_on_fail)
 {
     uint32_t tag_RIFF = TAG('R', 'I', 'F', 'F');
     uint32_t tag_WAVE = TAG('W', 'A', 'V', 'E');
@@ -362,18 +365,23 @@ wavio* wav_read_open(const char *filename)
         }
         if (scan_buf == tag_data && state == 3) {
             wav->data_length = read_int32(wav);
+            if (wav->data_length <= 0)
+                wav->streamed = 1;
             if (!wav->valid_bits_per_sample)
                 wav->valid_bits_per_sample = wav->bits_per_sample;
             if (!wav->channel_mask)
                 wav->channel_mask = duh_channel_mask(wav->channels);
             if (!wav->channel_mask) break;
-            wav->streamed = 1;
 
-            if (looks_ok(wav)) return wav;
+            if (looks_ok(wav))
+                return wav;
+
             break;
         }
     }
 
+    if (dump_on_fail)
+        wavio_dump(wav, "failed");
     free(wav);
     return NULL;
 }
@@ -496,6 +504,7 @@ int wav_read(wavio* wav, unsigned char* data, unsigned int length) {
     if (length > wav->data_length && !wav->streamed)
         length = wav->data_length;
     n = fread(data, 1, length, wav->fp);
+    wav->data_length -= n;
     return n;
 }
 
@@ -528,34 +537,46 @@ int wav_read_samples(wavio* wav, int32_t* samples, int nb_samples)
         } else if (bytes_per_sample == 3) {
             samples[i] = in[0] | (in[1] << 8) | (in[2] << 16) | ((in[2] & 0x80) ? (0xff << 24) : 0);
             samples[i] <<= 8;
-        } else if (bytes_per_sample == 4) {
+        } else if (bytes_per_sample == 4 && wav->format == 1) {
             samples[i] = in[0] | (in[1] << 8) | (in[2] << 16) | (in[3] << 24);
+        } else if (bytes_per_sample == 4 && wav->format == 3) {
+            const float *f = (float*)in;
+            samples[i] = (uint32_t)( *f * 0x80000000U ); /* lossy */
+        } else if (bytes_per_sample == 8 && wav->format == 3) {
+            const double *d = (double*)in;
+            samples[i] = (uint32_t)( *d * 0x80000000U ); /* lossy */
         }
     }
+
     return nb_samples;
 }
 
 void wavio_dump(wavio* wav, const char* tag)
 {
     static const char * const fdesc[] = {
-        "NULL",
-        "stdin",
-        "stdout",
-        "<file>",
+        "NULL", "stdin", "stdout", "<file>",
     };
     int fdi = 3;
+    static const char * const wfdesc[] = {
+        "<unknown>", "PCM", "IEEE float",
+        "ITU-T G.711 A-law", "ITU-T G.711 Mu-law",
+    };
+    int fi = 0;
 
     if (!wav) return;
 
-    if (wav->fp == NULL)
-        fdi = 0;
-    if (wav->fp == stdin)
-        fdi = 1;
-    if (wav->fp == stdout)
-        fdi = 2;
+    if (wav->fp == NULL)   fdi = 0;
+    if (wav->fp == stdin)  fdi = 1;
+    if (wav->fp == stdout) fdi = 2;
+
+    if (wav->format == 1) fi = 1;
+    if (wav->format == 3) fi = 2;
+    if (wav->format == 6) fi = 3;
+    if (wav->format == 7) fi = 4;
 
     fprintf(stderr,
-        ".wavio(%s).format: %d\n"
+        ".wavio(%s).mode: %s\n"
+        ".wavio(%s).format: 0x%04x (%s)\n"
         ".wavio(%s).channels: %d\n"
         ".wavio(%s).channel_mask: 0x%08x\n"
         ".wavio(%s).sample_rate: %d\n"
@@ -563,16 +584,16 @@ void wavio_dump(wavio* wav, const char* tag)
         ".wavio(%s).valid_bits_per_sample: %d\n"
         ".wavio(%s).byte_rate: %d\n"
         ".wavio(%s).block_align: %d\n"
-        ".wavio(%s).write: %s\n"
         ".wavio(%s).streamed: %s\n"
         ".wavio(%s).raw_pcm_only: %s\n"
-        ".wavio(%s).data_length: %d\n"
+        ".wavio(%s).data_length: %d (%s)\n"
         ".wavio(%s).length_loc: %d\n"
         ".wavio(%s).data_size_loc: %d\n"
         ".wavio(%s).fp: %s\n"
         ".wavio(%s).input_buf: %s\n"
         ".wavio(%s).input_buf_size: %d\n",
-        tag, wav->format,
+        tag, (wav->write) ? "write" : "read",
+        tag, wav->format, wfdesc[fi],
         tag, wav->channels,
         tag, wav->channel_mask,
         tag, wav->sample_rate,
@@ -580,10 +601,10 @@ void wavio_dump(wavio* wav, const char* tag)
         tag, wav->valid_bits_per_sample,
         tag, wav->byte_rate,
         tag, wav->block_align,
-        tag, (wav->write) ? "true" : "false",
         tag, (wav->streamed) ? "true" : "false",
         tag, (wav->raw_pcm_only) ? "true" : "false",
         tag, wav->data_length,
+            (wav->write) ? "written" : "remaining",
         tag, wav->length_loc,
         tag, wav->data_size_loc,
         tag, fdesc[fdi],

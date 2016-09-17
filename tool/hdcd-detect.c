@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     } else {
-        wav = wav_read_open(infile);
+        wav = wav_read_open(infile, !opt_quiet);
         if (!wav) {
             if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
             return 1;
