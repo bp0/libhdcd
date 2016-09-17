@@ -27,7 +27,7 @@ extern "C" {
 
 typedef struct wavio wavio;
 
-wavio* wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw);
+wavio* wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw, int expected_data_length);
 int wav_write_samples(wavio *wav, const int32_t *samples, int nb_samples);
 
 wavio* wav_read_open(const char *filename, int dump_on_fail); /* dumber, but working with pipes version */

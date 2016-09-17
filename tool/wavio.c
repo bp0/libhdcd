@@ -143,7 +143,7 @@ static int fwrite_int32el(int32_t v, FILE *fp) {
     return fwrite(&b, 1, 4, fp);
 }
 
-wavio *wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw)
+wavio *wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw, int expected_data_length)
 {
     int ex = 0;
     wavio* wav = malloc(sizeof(wavio));
@@ -186,7 +186,7 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
     if (!raw) {
         fwrite("RIFF", 1, 4, wav->fp);
         wav->length_loc = ftell(wav->fp);
-        fwrite_int32el(0, wav->fp);
+        fwrite_int32el(-1, wav->fp);
         if (ex)
             fwrite("WAVEfmt \x28\x00\x00\x00\xFE\xFF", 1, 14, wav->fp);
         else
@@ -204,7 +204,9 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
         }
         fwrite("data", 1, 4, wav->fp);
         wav->data_size_loc = ftell(wav->fp);
-        fwrite_int32el(0, wav->fp);
+        fwrite_int32el(expected_data_length, wav->fp);
+        if (wav->data_size_loc < 0 || wav->length_loc < 0)
+            wav->streamed = 1;
     }
     return wav;
 }

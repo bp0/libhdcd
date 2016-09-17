@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
     int nb_samples;
     int32_t* process_buf;
     int i, c, read, count, full_count = 0, ver_match;
+    uint32_t input_data_length = 0, output_data_length = 0;
 
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
     int kmode = BUILD_HDCD_EXE_COMPAT,
@@ -286,7 +287,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
             return 1;
         }
-        if (!wav_get_header(wav, &format, &channels, &sample_rate, NULL, &bits_per_sample, NULL)) {
+        if (!wav_get_header(wav, &format, &channels, &sample_rate, NULL, &bits_per_sample, &input_data_length)) {
             if (!opt_quiet) fprintf(stderr, "Bad wav file %s\n", infile);
             return 1;
         }
@@ -306,6 +307,10 @@ int main(int argc, char *argv[]) {
     }
 
     bits_per_sample_out = opt_nop ? bits_per_sample : 24;
+    if (input_data_length > 0) {
+        /* 24/16 */
+        output_data_length = input_data_length + (input_data_length / 2);
+    }
 
     if (bits_per_sample != 16) {
         if (bits_per_sample != 20 && bits_per_sample != 24) {
@@ -323,7 +328,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Output file exists, use -f to overwrite\n");
             return 1;
         } else {
-            wav_out = wav_write_open(outfile, channels, sample_rate, bits_per_sample_out, opt_raw_out);
+            wav_out = wav_write_open(outfile, channels, sample_rate, bits_per_sample_out, opt_raw_out, output_data_length);
             if (!wav_out) return 1;
         }
     }
