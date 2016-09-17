@@ -147,12 +147,15 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
     if (!wav) return NULL;
     memset(wav, 0, sizeof(*wav));
 
+    if (bits_per_sample == 0) return NULL;
+
+    wav->format = 1;
     wav->channels = channels;
     wav->channel_mask = duh_channel_mask(channels);
     wav->sample_rate = sample_rate;
     if (bits_per_sample % 8) {
         wav->valid_bits_per_sample = bits_per_sample;
-        wav->bits_per_sample = bits_per_sample + bits_per_sample % 8;
+        wav->bits_per_sample = (bits_per_sample + 8) - (bits_per_sample % 8);
         ex = 1;
     } else {
         wav->bits_per_sample =
@@ -275,6 +278,8 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
     wavio* wav = malloc(sizeof(wavio));
     memset(wav, 0, sizeof(wavio));
 
+    if (bits_per_sample == 0) return NULL;
+
     if (!strcmp(filename, "-")) {
         wav->fp = stdin;
 #ifdef _WIN32
@@ -289,7 +294,7 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
 
     if (bits_per_sample % 8) {
         wav->valid_bits_per_sample = bits_per_sample;
-        wav->bits_per_sample = bits_per_sample + bits_per_sample % 8;
+        wav->bits_per_sample = (bits_per_sample + 8) - (bits_per_sample % 8);
     } else {
         wav->bits_per_sample =
         wav->valid_bits_per_sample = bits_per_sample;
@@ -467,7 +472,8 @@ wavio* wav_read_open_ms(const char *filename)
     return wr;
 }
 
-int wav_get_header(wavio* wav, int* format, int* channels, int* sample_rate, int* bits_per_sample, unsigned int* data_length) {
+int wav_get_header(wavio* wav, int* format, int* channels, int* sample_rate, int* bits_per_sample, int *valid_bits_per_sample, unsigned int* data_length)
+{
     if (format)
         *format = wav->format;
     if (channels)
@@ -476,6 +482,8 @@ int wav_get_header(wavio* wav, int* format, int* channels, int* sample_rate, int
         *sample_rate = wav->sample_rate;
     if (bits_per_sample)
         *bits_per_sample = wav->bits_per_sample;
+    if (valid_bits_per_sample)
+        *valid_bits_per_sample = wav->valid_bits_per_sample;
     if (data_length)
         *data_length = wav->data_length;
     return wav->format && wav->sample_rate;
@@ -488,7 +496,6 @@ int wav_read(wavio* wav, unsigned char* data, unsigned int length) {
     if (length > wav->data_length && !wav->streamed)
         length = wav->data_length;
     n = fread(data, 1, length, wav->fp);
-    wav->data_length -= length;
     return n;
 }
 
@@ -526,4 +533,62 @@ int wav_read_samples(wavio* wav, int32_t* samples, int nb_samples)
         }
     }
     return nb_samples;
+}
+
+void wavio_dump(wavio* wav, const char* tag)
+{
+    static const char * const fdesc[] = {
+        "NULL",
+        "stdin",
+        "stdout",
+        "<file>",
+    };
+    int fdi = 3;
+
+    if (!wav) return;
+
+    if (wav->fp == NULL)
+        fdi = 0;
+    if (wav->fp == stdin)
+        fdi = 1;
+    if (wav->fp == stdout)
+        fdi = 2;
+
+    fprintf(stderr,
+        ".wavio(%s).format: %d\n"
+        ".wavio(%s).channels: %d\n"
+        ".wavio(%s).channel_mask: 0x%08x\n"
+        ".wavio(%s).sample_rate: %d\n"
+        ".wavio(%s).bits_per_sample: %d\n"
+        ".wavio(%s).valid_bits_per_sample: %d\n"
+        ".wavio(%s).byte_rate: %d\n"
+        ".wavio(%s).block_align: %d\n"
+        ".wavio(%s).write: %s\n"
+        ".wavio(%s).streamed: %s\n"
+        ".wavio(%s).raw_pcm_only: %s\n"
+        ".wavio(%s).data_length: %d\n"
+        ".wavio(%s).length_loc: %d\n"
+        ".wavio(%s).data_size_loc: %d\n"
+        ".wavio(%s).fp: %s\n"
+        ".wavio(%s).input_buf: %s\n"
+        ".wavio(%s).input_buf_size: %d\n",
+        tag, wav->format,
+        tag, wav->channels,
+        tag, wav->channel_mask,
+        tag, wav->sample_rate,
+        tag, wav->bits_per_sample,
+        tag, wav->valid_bits_per_sample,
+        tag, wav->byte_rate,
+        tag, wav->block_align,
+        tag, (wav->write) ? "true" : "false",
+        tag, (wav->streamed) ? "true" : "false",
+        tag, (wav->raw_pcm_only) ? "true" : "false",
+        tag, wav->data_length,
+        tag, wav->length_loc,
+        tag, wav->data_size_loc,
+        tag, fdesc[fdi],
+        tag, (wav->input_buf) ? "allocated" : "not allocated",
+        tag, wav->input_buf_size
+        );
+
 }

@@ -36,8 +36,10 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
 int wav_read(wavio* wav, unsigned char* data, unsigned int length);
 int wav_read_samples(wavio* wav, int32_t* samples, int nb_samples);
 
-int wav_get_header(wavio* wav, int* format, int* channels, int* sample_rate, int* bits_per_sample, unsigned int* data_length);
+int wav_get_header(wavio* wav, int* format, int* channels, int* sample_rate, int* bits_per_sample, int *valid_bits_per_sample, unsigned int* data_length);
 void wav_close(wavio *wav);
+
+void wavio_dump(wavio *wav, const char *tag);
 
 #ifdef __cplusplus
 }

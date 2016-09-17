@@ -219,9 +219,12 @@ do_test "-qxpr -z cdt -e 176400" "hdcd-mix.raw"  "1afa2b589dc51ea8bb9e7cb07d363f
 do_test "-qxpr -z cdt -e 192000" "hdcd-mix.raw"  "2f431c0df402438b919f804082eab6b6" 0 "rate-192000-cdt"
 
 # 20-bit and 24-bit
-do_test "-qx -e 44100:20" "hdcd20.wav" "" 0 "hdcd-20bit-yes"
-do_test "-qx"             "hdcd20.wav" "" 1 "hdcd-20bit-no"
-do_test "-qx"             "hdcd24.wav" "" 0 "hdcd-24bit"
+do_test "-qx"             "hdcd20.wav"     "" 0 "hdcd-20bit"
+do_test "-qx"             "hdcd24.wav"     "" 0 "hdcd-24bit"
+# actual 20-bit, but the WAV header claims 24-bit, and HDCD isn't found
+do_test "-qx"             "hdcd20in24.wav" "" 1 "hdcd-20bit-in24-no"
+# specifiy 20-bit, and HDCD is found
+do_test "-qx -e 44100:20" "hdcd20in24.wav" "" 0 "hdcd-20bit-in24-yes"
 
 echo "passed: $PASSED / $TESTS $AST"
 echo "exit: $EXIT_CODE"

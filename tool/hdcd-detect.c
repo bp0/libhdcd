@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
             return 1;
         }
-        if (!wav_get_header(wav, &format, &channels, &sample_rate, &bits_per_sample, NULL)) {
+        if (!wav_get_header(wav, &format, &channels, &sample_rate, NULL, &bits_per_sample, NULL)) {
             if (!opt_quiet) fprintf(stderr, "Bad wav file %s\n", infile);
             return 1;
         }
