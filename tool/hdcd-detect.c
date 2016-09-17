@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     char dstr[256];
     char *delim = NULL;
 
-    while ((c = getopt(argc, argv, "acde:fhijkno:pqrsvxz:")) != -1) {
+    while ((c = getopt(argc, argv, "acdDe:fhijkno:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
                 xmode = 1;
@@ -189,6 +189,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 's':
                 opt_ks = 1;
+                break;
+            case 'D':
+                opt_dump_detect = 2;
                 break;
             case 'd':
                 opt_dump_detect = 1;
@@ -420,8 +423,12 @@ int main(int argc, char *argv[]) {
 
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     if (!opt_quiet) {
-        if (opt_dump_detect) {
+        if (opt_dump_detect == 2) {
+            wavio_dump(wav, "input");
+            if (outfile) wavio_dump(wav_out, "output");
             hdcd_logger_dump_state(ctx);
+        }
+        if (opt_dump_detect) {
             int det = hdcd_detected(ctx);
             int pf = hdcd_detect_packet_type(ctx);
             int pe = hdcd_detect_peak_extend(ctx);
