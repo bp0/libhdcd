@@ -80,6 +80,7 @@ static void usage(const char* name, int kmode) {
         "    -o <file>\t output file to write\n"
         "    -c\t\t output to stdout\n"
         "    -d\t\t dump full detection data instead of summary\n"
+        "      \t\t   (-dd even more, -ddd more still)\n"
         "    -z <mode>\t analyze modes:\n");
     for(i = 0; i <= 6; i++)
         fprintf(stderr,
@@ -191,11 +192,8 @@ int main(int argc, char *argv[]) {
             case 's':
                 opt_ks = 1;
                 break;
-            case 'D':
-                opt_dump_detect = 2;
-                break;
             case 'd':
-                opt_dump_detect = 1;
+                opt_dump_detect++;
                 break;
             case 'a':
                 opt_ka = 1;
@@ -428,11 +426,12 @@ int main(int argc, char *argv[]) {
 
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     if (!opt_quiet) {
-        if (opt_dump_detect == 2) {
+        if (opt_dump_detect >= 3) {
             wavio_dump(wav, "input");
             if (outfile) wavio_dump(wav_out, "output");
-            hdcd_logger_dump_state(ctx);
         }
+        if (opt_dump_detect >= 2)
+            hdcd_logger_dump_state(ctx);
         if (opt_dump_detect) {
             int det = hdcd_detected(ctx);
             int pf = hdcd_detect_packet_type(ctx);
