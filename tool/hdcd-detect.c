@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     int xmode = 0, opt_force = 0, opt_quiet = 0, amode = 0;
     int kmode = BUILD_HDCD_EXE_COMPAT,
         opt_ka = 0, opt_ks = 0, opt_kr = 0, opt_ki = 0;
-    int opt_help = 0, opt_dump_detect = 0;
+    int opt_help = 0, opt_dump = 0;
     int opt_raw_out = 0, opt_raw_in = 0, raw_rate = 44100, raw_bps = 16, opt_e = 0;
     int opt_nop = 0, opt_testing = 0;
     int dv; /* used with opt_testing */
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
                 opt_ks = 1;
                 break;
             case 'd':
-                opt_dump_detect++;
+                opt_dump++;
                 break;
             case 'a':
                 opt_ka = 1;
@@ -285,18 +285,23 @@ int main(int argc, char *argv[]) {
             if (!opt_quiet) fprintf(stderr, "Unable to open wav file %s\n", infile);
             return 1;
         }
-        if (!wav_get_header(wav, &format, &channels, &sample_rate, NULL, &bits_per_sample, &input_data_length)) {
-            if (!opt_quiet) fprintf(stderr, "Bad wav file %s\n", infile);
-            return 1;
-        }
+
+        wav_get_header(wav, &format, &channels, &sample_rate, NULL, &bits_per_sample, &input_data_length);
         if (format != 1) {
-            if (!opt_quiet) fprintf(stderr, "Unsupported WAV format %d\n", format);
+            if (!opt_quiet) {
+                if (opt_dump >= 3) wavio_dump(wav, "input");
+                fprintf(stderr, "Unsupported WAV format %d\n", format);
+            }
             return 1;
         }
         if (channels != 2) {
-            if (!opt_quiet) fprintf(stderr, "Unsupported WAV channels %d\n", channels);
+            if (!opt_quiet) {
+                if (opt_dump >= 3) wavio_dump(wav, "input");
+                fprintf(stderr, "Unsupported WAV channels %d\n", channels);
+            }
             return 1;
         }
+
         if (opt_e) {
             /* override */
             sample_rate = raw_rate;
@@ -312,6 +317,7 @@ int main(int argc, char *argv[]) {
 
     if (bits_per_sample != 16) {
         if (bits_per_sample != 20 && bits_per_sample != 24) {
+            if (opt_dump >= 3) wavio_dump(wav, "input");
             fprintf(stderr, "Unsupported bit depth: %d\n", bits_per_sample);
             return 1;
         }
@@ -426,13 +432,13 @@ int main(int argc, char *argv[]) {
 
     if (!opt_quiet) fprintf(stderr, "%d samples, %0.2fs\n", full_count * channels, (float)full_count / (float)sample_rate);
     if (!opt_quiet) {
-        if (opt_dump_detect >= 3) {
+        if (opt_dump >= 3) {
             wavio_dump(wav, "input");
             if (outfile) wavio_dump(wav_out, "output");
         }
-        if (opt_dump_detect >= 2)
+        if (opt_dump >= 2)
             hdcd_logger_dump_state(ctx);
-        if (opt_dump_detect) {
+        if (opt_dump) {
             int det = hdcd_detected(ctx);
             int pf = hdcd_detect_packet_type(ctx);
             int pe = hdcd_detect_peak_extend(ctx);
