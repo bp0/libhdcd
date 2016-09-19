@@ -309,12 +309,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    bits_per_sample_out = opt_nop ? bits_per_sample : 24;
-    if (input_data_length > 0) {
-        /* 24/16 */
-        output_data_length = input_data_length + (input_data_length / 2);
-    }
-
     if (bits_per_sample != 16) {
         if (bits_per_sample != 20 && bits_per_sample != 24) {
             if (opt_dump >= 3) wavio_dump(wav, "input");
@@ -326,6 +320,25 @@ int main(int argc, char *argv[]) {
         if (outfile)
             return 1;
     }
+
+    bits_per_sample_out = bits_per_sample;
+    output_data_length = input_data_length;
+
+    if (!opt_nop)
+        switch (bits_per_sample) {
+            case 16:  /* 16 -> 20(in 24) */
+                bits_per_sample_out = 20;
+                output_data_length = input_data_length + (input_data_length / 2);
+                break;
+            case 20:  /* 20(in 24) -> ?(in 24) */
+                bits_per_sample_out = 24;
+                output_data_length = input_data_length;
+                break;
+            case 24:  /* 24 -> ?(in 32) */
+                bits_per_sample_out = 32;
+                output_data_length = input_data_length + (input_data_length / 3);
+                break;
+        }
 
     if (outfile) {
         if( !opt_force && strcmp(outfile, "-") != 0 && access( outfile, F_OK ) != -1 ) {

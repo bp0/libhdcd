@@ -166,7 +166,7 @@ do_test "-ksxr" "hdcd.raw"     "5db465a58d2fd0d06ca944b883b33476" 0 "hdcd-output
 
 # hdcd.wav has PE only
 # output as wav to test the wav writer
-do_test "-qx"  "hdcd.wav"     "a5bc65fa360802a19403fa4afd6338af" 0 "hdcd-output-wav"
+do_test "-qx"  "hdcd.wav"     "6665010ef8f931754494c558cccf22b7" 0 "hdcd-output-wav"
 
 # hdcd-all.wav has PE, LLE, and TF
 do_test "-qxp" "hdcd-all.wav"  "e8cdf508b7805ed49aaba2f3e12c1bfe" 0
