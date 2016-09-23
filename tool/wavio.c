@@ -342,13 +342,20 @@ wavio* wav_read_open(const char *filename, int dump_on_fail)
         c = fgetc(wav->fp);
         if (c == EOF || c < 0 || c > 255) break;
         scan_buf = (scan_buf << 8) | c;
-        if (scan_buf == tag_RIFF) {
+        if (scan_buf == tag_RIFF && state == 0) {
             state = 1; continue;
         }
-        if (scan_buf == tag_WAVE) {
-            state = 2; continue;
+try_again:
+        if (scan_buf == tag_WAVE && state == 1) {
+            scan_buf = read_tag(wav);
+            if (scan_buf == tag_fmt)
+                state = 2;
+            else goto try_again;
+            /* in case the coincidental text "WAVE"
+             * immediately precedes the actual
+             * WAVE chunk */
         }
-        if (scan_buf == tag_fmt && state == 2) {
+        if (state == 2) {
             /*fmt_len          =*/ read_int32(wav);
             wav->format          = read_int16(wav);
             wav->channels        = read_int16(wav);
