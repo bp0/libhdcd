@@ -36,6 +36,7 @@ struct wavio {
     uint32_t data_length;
 
     int format;
+    int ex;
     int32_t sample_rate;
     int16_t bits_per_sample;
     int16_t channels;
@@ -65,6 +66,9 @@ static int duh_channel_mask(int channels)
         case 4:
             return 0x0033; /* (LF RF LR RR) */
             /*or maybe 0x0107 (L R C S)*/
+        /* really anything other than mono or stereo should
+         * be WAVE_FORMAT_EXTENSIBLE and already have a mask
+         * defined. */
     };
     return 0;
 }
@@ -145,7 +149,6 @@ static int fwrite_int32el(int32_t v, FILE *fp) {
 
 wavio *wav_write_open(const char *filename, int channels, int sample_rate, int bits_per_sample, int raw, int expected_data_length)
 {
-    int ex = 0;
     wavio* wav = malloc(sizeof(wavio));
     if (!wav) return NULL;
     memset(wav, 0, sizeof(*wav));
@@ -153,19 +156,20 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
     if (bits_per_sample == 0) return NULL;
 
     wav->format = 1;
+    wav->ex = 0;
     wav->channels = channels;
     wav->channel_mask = duh_channel_mask(channels);
     wav->sample_rate = sample_rate;
     if (bits_per_sample % 8) {
         wav->valid_bits_per_sample = bits_per_sample;
         wav->bits_per_sample = (bits_per_sample + 8) - (bits_per_sample % 8);
-        ex = 1;
+        wav->ex = 1;
     } else {
         wav->bits_per_sample =
         wav->valid_bits_per_sample = bits_per_sample;
     }
     if (wav->bits_per_sample > 16 || channels > 2)
-        ex = 1;
+        wav->ex = 1;
     wav->raw_pcm_only = raw;
     wav->byte_rate = channels * sample_rate * wav->bits_per_sample / 8;
     wav->block_align = channels * wav->bits_per_sample / 8;
@@ -187,7 +191,7 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
         fwrite("RIFF", 1, 4, wav->fp);
         wav->length_loc = ftell(wav->fp);
         fwrite_int32el(-1, wav->fp);
-        if (ex)
+        if (wav->ex)
             fwrite("WAVEfmt \x28\x00\x00\x00\xFE\xFF", 1, 14, wav->fp);
         else
             fwrite("WAVEfmt \x10\x00\x00\x00\x01\x00", 1, 14, wav->fp);
@@ -196,7 +200,7 @@ wavio *wav_write_open(const char *filename, int channels, int sample_rate, int b
         fwrite_int32el(wav->byte_rate, wav->fp);
         fwrite_int16el(wav->block_align, wav->fp);
         fwrite_int16el(wav->bits_per_sample, wav->fp);
-        if (ex) {
+        if (wav->ex) {
             fwrite_int16el(22, wav->fp);
             fwrite_int16el(wav->valid_bits_per_sample, wav->fp);
             fwrite_int32el(wav->channel_mask, wav->fp);
@@ -311,6 +315,8 @@ wavio* wav_read_open_raw(const char *filename, int channels, int sample_rate, in
     wav->block_align = channels * wav->bits_per_sample/8;
     wav->raw_pcm_only = 1;
     wav->streamed = 1;
+    wav->format = 1;
+    wav->ex = (wav->channels > 2 || wav->bits_per_sample > 16) ? 1 : 0;
     return wav;
 }
 
@@ -368,6 +374,7 @@ try_again:
                 wav->valid_bits_per_sample = read_int16(wav);
                 wav->channel_mask          = read_int32(wav);
                 wav->format                = read_int16(wav);
+                wav->ex = 1;
             }
             state = 3;
             continue;
@@ -463,6 +470,7 @@ wavio* wav_read_open_ms(const char *filename)
                     wr->valid_bits_per_sample = read_int16(wr);
                     wr->channel_mask          = read_int32(wr);
                     wr->format                = read_int32(wr);
+                    wr->ex = 1;
                     skip(wr->fp, sublength - 28);
                 } else {
                     skip(wr->fp, sublength - 16);
@@ -585,7 +593,7 @@ void wavio_dump(wavio* wav, const char* tag)
 
     fprintf(stderr,
         ".wavio(%s).mode: %s\n"
-        ".wavio(%s).format: 0x%04x (%s)\n"
+        ".wavio(%s).format: 0x%04x%s (%s)\n"
         ".wavio(%s).channels: %d\n"
         ".wavio(%s).channel_mask: 0x%08x\n"
         ".wavio(%s).sample_rate: %d\n"
@@ -602,7 +610,7 @@ void wavio_dump(wavio* wav, const char* tag)
         ".wavio(%s).input_buf: %s\n"
         ".wavio(%s).input_buf_size: %d\n",
         tag, (wav->write) ? "write" : "read",
-        tag, wav->format, wfdesc[fi],
+        tag, wav->format, wav->ex ? " [ex]": "", wfdesc[fi],
         tag, wav->channels,
         tag, wav->channel_mask,
         tag, wav->sample_rate,
