@@ -118,18 +118,22 @@ void hdcd_reset(hdcd_simple *s)
 
 static void _hdcd_check_samples(hdcd_simple *s, int *samples, int count)
 {
-    int i, top = 0, bottom = 0;
+    int i, top = 0, bottom = 0, a = (32 - s->bits);
+    int32_t top_border = 1 << s->bits;
+    int32_t bottom_mask = (1 << a) - 1;
     if (!s) return;
 
     /* check if the samples were already converted to s32 */
     for (i = 0; i < count * 2; i++) {
-        if (samples[i] > 32767 || samples[i] < -32768) top++;
-        if (samples[i] & 0x0000ffff) bottom++;
+        if (samples[i] >= top_border || samples[i] < -top_border) top++;
+        if (samples[i] & bottom_mask) bottom++;
     }
     if (top) {
-        _hdcd_log(&s->logger, "hdcd: s32 samples detected as input, shifting to s16. (%d:%d)\n", top, bottom);
+        _hdcd_log(&s->logger, "hdcd: s32 samples detected as input, shifting to s%d."
+            "(0x%08x : %d, 0x%08x : %d]\n", s->bits,
+            top_border, top, bottom_mask, bottom);
         for (i = 0; i < count * 2; i++)
-            samples[i] >>= 16;
+            samples[i] >>= a;
     }
 }
 
