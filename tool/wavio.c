@@ -388,6 +388,15 @@ try_again:
             if (!wav->channel_mask)
                 wav->channel_mask = duh_channel_mask(wav->channels);
             if (!wav->channel_mask) break;
+            if (!wav->ex && wav->bits_per_sample % 8) {
+                /* if it is not WAVE_FORMAT_EXTENSIBLE but has a
+                 * bits_per_sample that is not byte-aligned,
+                 * try and make it work. */
+                wav->valid_bits_per_sample = wav->bits_per_sample;
+                wav->bits_per_sample = wav->block_align / wav->channels * 8;
+                if (wav->bits_per_sample < wav->valid_bits_per_sample)
+                    break;
+            }
 
             if (looks_ok(wav))
                 return wav;
