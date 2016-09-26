@@ -88,11 +88,13 @@ static void usage(const char* name, int kmode) {
     fprintf(stderr,
         "    -p\t\t output raw s24le PCM samples only without\n"
         "      \t\t any wav header\n"
-        "    -e <rate>[:<bps>]\t sample rate, and bits per sample of raw input\n"
-        "      \t\t\t     rates: 44100 (default), 88200, 176400, 48000, 96000, or 192000\n"
-        "      \t\t\t     bits per sample: 16 (default), 20, or 24\n"
-        "      \t\t\t       20-bit must be stored as 24-bit, but if 20 is not specified\n"
-        "      \t\t\t       the scanner will look for HDCD packets in the wrong place\n"
+        "    -e <rate>[:<bps>[:<channels>]]\n"
+        "      \t\t sample rate, bits per sample, channel count of raw input\n"
+        "      \t\t     rates: 44100 (default), 88200, 176400, 48000, 96000, or 192000\n"
+        "      \t\t     bits per sample: 16 (default), 20, or 24\n"
+        "      \t\t       20-bit must be stored as 24-bit, but if 20 is not specified\n"
+        "      \t\t       the scanner will look for HDCD packets in the wrong place\n"
+        "      \t\t     channels: 2 (default)\n"
         );
     if (kmode) {
         fprintf(stderr,
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]) {
     int kmode = BUILD_HDCD_EXE_COMPAT,
         opt_ka = 0, opt_ks = 0, opt_kr = 0, opt_ki = 0;
     int opt_help = 0, opt_dump = 0;
-    int opt_raw_out = 0, opt_raw_in = 0, raw_rate = 44100, raw_bps = 16, opt_e = 0;
+    int opt_raw_out = 0, opt_raw_in = 0, raw_rate = 44100, raw_bps = 16, raw_channels = 2, opt_e = 0;
     int opt_nop = 0, opt_testing = 0;
     int dv; /* used with opt_testing */
 
@@ -177,10 +179,18 @@ int main(int argc, char *argv[]) {
                 break;
             case 'e':
                 opt_e = 1;
+                i = atoi(optarg);
+                if (i) raw_rate = i;
                 delim = strchr(optarg, ':');
-                raw_rate = atoi(optarg);
-                if (delim)
-                    raw_bps = atoi(delim + 1);
+                if (delim) {
+                    i = atoi(delim + 1);
+                    if (i) raw_bps = i;
+                    delim = strchr(delim + 1, ':');
+                    if (delim) {
+                        i = atoi(delim + 1);
+                        if (i) raw_channels = i;
+                    }
+                }
                 break;
             case 'c':
                 outfile = "-";
@@ -271,7 +281,7 @@ int main(int argc, char *argv[]) {
 
     if (opt_raw_in) {
         format = 1;
-        channels = 2;
+        channels = raw_channels;
         sample_rate = raw_rate;
         bits_per_sample = raw_bps;
         wav = wav_read_open_raw(infile, channels, sample_rate, (bits_per_sample == 20) ? 24 : bits_per_sample);
@@ -294,19 +304,21 @@ int main(int argc, char *argv[]) {
             }
             return 1;
         }
-        if (channels != 2) {
-            if (!opt_quiet) {
-                if (opt_dump >= 3) wavio_dump(wav, "input");
-                fprintf(stderr, "Unsupported WAV channels %d\n", channels);
-            }
-            return 1;
-        }
 
         if (opt_e) {
             /* override */
             sample_rate = raw_rate;
             bits_per_sample = raw_bps;
+            channels = raw_channels;
         }
+    }
+
+    if (channels != 2) {
+        if (!opt_quiet) {
+            if (opt_dump >= 3) wavio_dump(wav, "input");
+            fprintf(stderr, "Unsupported WAV channels %d\n", channels);
+        }
+        return 1;
     }
 
     if (bits_per_sample != 16) {
