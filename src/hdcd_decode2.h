@@ -94,6 +94,7 @@ typedef struct {
 
     int running_gain; /**< 11-bit (3.8) fixed point, extended from target_gain */
 
+    int bits;             /**< sample bit depth: 16, 20, 24 */
     int rate;             /**< sample rate */
     int cdt_period;       /**< cdt period in ms */
 
@@ -133,11 +134,11 @@ typedef struct {
 } hdcd_state_stereo;
 
 /* n-channel versions */
-void _hdcd_reset(hdcd_state *state, unsigned rate, int sustain_period_ms, int flags);
+void _hdcd_reset(hdcd_state *state, unsigned rate, unsigned bits, int sustain_period_ms, int flags);
 void _hdcd_process(hdcd_state *state, int *samples, int count, int stride);
 
 /* stereo versions */
-void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate, int sustain_period_ms, int flags);
+void _hdcd_reset_stereo(hdcd_state_stereo *state, unsigned rate, unsigned bits, int sustain_period_ms, int flags);
 void _hdcd_process_stereo(hdcd_state_stereo *state, int *samples, int count);
 
 /* hdcd_state* or hdcd_state_stereo* */

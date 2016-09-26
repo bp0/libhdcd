@@ -65,10 +65,10 @@ hdcd_simple *hdcd_new(void)
     return s;
 }
 
-static void _hdcd_simple_reset_state(hdcd_state_stereo *state, int rate)
+static void _hdcd_simple_reset_state(hdcd_state_stereo *state, int rate, int bits)
 {
     if (!state) return;
-    _hdcd_reset_stereo(state, rate, 0, HDCD_FLAG_TGM_LOG_OFF);
+    _hdcd_reset_stereo(state, rate, bits, 0, HDCD_FLAG_TGM_LOG_OFF);
 }
 
 int hdcd_reset_ext(hdcd_simple *s, int rate, int bits)
@@ -99,7 +99,7 @@ int hdcd_reset_ext(hdcd_simple *s, int rate, int bits)
     }
     s->rate = rate;
     s->bits = bits;
-    _hdcd_simple_reset_state(&s->state, s->rate);
+    _hdcd_simple_reset_state(&s->state, s->rate, s->bits);
     _hdcd_detect_reset(&s->detect);
     _hdcd_attach_logger(&s->state, &s->logger);
     hdcd_analyze_mode(s, 0);
@@ -143,7 +143,7 @@ int hdcd_scan(hdcd_simple *s, int *samples, int count, int ignore_state)
      * calls to _hdcd_scan_stereo() until the first effectual packet
      * is found */
     if (ignore_state) {
-        _hdcd_simple_reset_state(&st, s->rate);
+        _hdcd_simple_reset_state(&st, s->rate, s->bits);
         _hdcd_detect_reset(&d);
     } else {
         memcpy(&st, &s->state, sizeof(hdcd_state_stereo));

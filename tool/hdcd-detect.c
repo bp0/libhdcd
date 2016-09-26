@@ -315,10 +315,14 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Unsupported bit depth: %d\n", bits_per_sample);
             return 1;
         }
+        /*
         if (!opt_quiet)
             fprintf(stderr, "%d-bit is not fully supported: can be scanned, but not expanded.\n", bits_per_sample);
         if (outfile)
             return 1;
+        */
+        if (!opt_quiet)
+            fprintf(stderr, "%d-bit is not fully supported: may be scanned, but expansion is very experimental and possibly completely incorrect.\n", bits_per_sample);
     }
 
     bits_per_sample_out = bits_per_sample;
