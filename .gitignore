@@ -40,3 +40,6 @@ hdcd-detect
 samp/
 win-bin/
 test/hdcd-mix.raw
+tool/wavfk*
+enc/
+*.kdev4
