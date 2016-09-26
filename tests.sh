@@ -224,7 +224,7 @@ do_test "-qx"             "hdcd24.wav"     "" 0 "hdcd-24bit"
 # actual 20-bit, but the WAV header claims 24-bit, and HDCD isn't found
 do_test "-qx"             "hdcd20in24.wav" "" 1 "hdcd-20bit-in24-no"
 # specifiy 20-bit, and HDCD is found
-do_test "-qx -e 44100:20" "hdcd20in24.wav" "" 0 "hdcd-20bit-in24-yes"
+do_test "-qx -e :20"      "hdcd20in24.wav" "" 0 "hdcd-20bit-in24-yes"
 
 echo "passed: $PASSED / $TESTS $AST"
 echo "exit: $EXIT_CODE"
