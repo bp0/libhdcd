@@ -226,6 +226,15 @@ do_test "-qx"             "hdcd20in24.wav" "" 1 "hdcd-20bit-in24-no"
 # specifiy 20-bit, and HDCD is found
 do_test "-qx -e :20"      "hdcd20in24.wav" "" 0 "hdcd-20bit-in24-yes"
 
+# multiple -x tests
+# has HDCD but all packets are NOP
+do_test "-qxx"            "hdcd-err.wav"   "" 1 "hdcd-xx-fail"
+# has HDCD but only uses LLE
+do_test "-qxx"            "hdcd-tgm.wav"   "" 0 "hdcd-xx-pass"
+do_test "-qxxx"           "hdcd-tgm.wav"   "" 1 "hdcd-xxx-fail"
+# has HDCD and uses PE
+do_test "-qxxx"           "hdcd-all.wav"   "" 0 "hdcd-xxx-pass"
+
 echo "passed: $PASSED / $TESTS $AST"
 echo "exit: $EXIT_CODE"
 exit $EXIT_CODE

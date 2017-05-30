@@ -75,8 +75,10 @@ static void usage(const char* name, int kmode) {
 #endif
         "    -q\t\t quiet\n"
         "    -f\t\t force overwrite\n"
-        "    -x\t\t return non-zero exit code if HDCD encoding\n"
-        "      \t\t was _NOT_ detected\n"
+        "    -x  \t return non-zero exit code if HDCD encoding\n"
+        "        \t was _NOT_ detected\n"
+        "    -xx \t ... non-zero if HDCD with potential effect was _NOT_ detected\n"
+        "    -xxx\t ... non-zero if HDCD with PE was _NOT_ detected\n"
         "    -o <file>\t output file to write\n"
         "    -c\t\t output to stdout\n"
         "    -d\t\t dump full detection data instead of summary\n"
@@ -141,7 +143,7 @@ int main(int argc, char *argv[]) {
     while ((c = getopt(argc, argv, "acdDe:fhijkno:pqrsvxz:")) != -1) {
         switch (c) {
             case 'x':
-                xmode = 1;
+                xmode++;
                 break;
             case 'v':
                 printf("libhdcd %d.%d\n", HDCDLIB_VER_MAJOR, HDCDLIB_VER_MINOR);
@@ -449,7 +451,17 @@ int main(int argc, char *argv[]) {
         }
         if (read < nb_samples) break; /* eof */
     }
-    if (xmode) xmode = !hdcd_detected(ctx); /* return non-zero if (-x) mode and HDCD not detected */
+    if (xmode) {
+        if (xmode == 1)
+            /* return non-zero if (-x) mode and HDCD not detected */
+            xmode = !hdcd_detected(ctx);
+        else if (xmode == 2)
+            /* return non-zero if (-xx) mode and effectual HDCD not detected */
+            xmode = !(hdcd_detected(ctx) == HDCD_EFFECTUAL);
+        else
+            /* return non-zero if (-xxx) mode and PE not used */
+            xmode = !!(hdcd_detect_peak_extend(ctx) == HDCD_PE_NEVER);
+    }
 
     if (opt_ki) {
         /* strings are exactly those given by Key's hdcd.exe -i */
