@@ -136,6 +136,8 @@ int main(int argc, char *argv[]) {
     int opt_nop = 0, opt_testing = 0;
     int dv; /* used with opt_testing */
 
+    int exit_value = 0; /* depends on xmode */
+
     hdcd_simple *ctx;
     char dstr[256];
     char *delim = NULL;
@@ -166,7 +168,6 @@ int main(int argc, char *argv[]) {
                 break;
             case 'i':
                 opt_ki = 1;
-                xmode = 1;
                 opt_ka = 1;
                 opt_quiet = 1;
                 break;
@@ -239,6 +240,11 @@ int main(int argc, char *argv[]) {
 
     if (argc - optind >= 1)
         infile = argv[optind];
+
+    /* -i implies -x, but allow multiple -x to set the level */
+    /* if -x was not specified, set it */
+    if (opt_ki && !xmode)
+        xmode = 1;
 
     if (kmode) {
         /* kmode default is -q, requires -s to print messages */
@@ -454,13 +460,13 @@ int main(int argc, char *argv[]) {
     if (xmode) {
         if (xmode == 1)
             /* return non-zero if (-x) mode and HDCD not detected */
-            xmode = !hdcd_detected(ctx);
+            exit_value = ( hdcd_detected(ctx) ) ? 0 : 1;
         else if (xmode == 2)
             /* return non-zero if (-xx) mode and effectual HDCD not detected */
-            xmode = !(hdcd_detected(ctx) == HDCD_EFFECTUAL);
+            exit_value = ( hdcd_detected(ctx) == HDCD_EFFECTUAL ) ? 0 : 1;
         else
             /* return non-zero if (-xxx) mode and PE not used */
-            xmode = !!(hdcd_detect_peak_extend(ctx) == HDCD_PE_NEVER);
+            exit_value = ( hdcd_detected(ctx) && hdcd_detect_peak_extend(ctx) ) ? 0 : 1;
     }
 
     if (opt_ki) {
@@ -503,5 +509,5 @@ int main(int argc, char *argv[]) {
     if (outfile) wav_close(wav_out);
     hdcd_free(ctx);
 
-    return xmode;
+    return exit_value;
 }
